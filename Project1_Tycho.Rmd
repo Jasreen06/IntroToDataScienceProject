@@ -49,3 +49,22 @@ The data contains the different attributes of customers' booking details. The de
 * avg_price_per_room: Average price per day of the reservation; prices of the rooms are dynamic. (in euros)
 * no_of_special_requests: Total number of special requests made by the customer (e.g. high floor, view from the room, etc)
 * booking_status: Flag indicating if the booking was canceled or not.
+
+### Loading Data
+```{r}
+hotel <- read.csv("INNHotelsGroup.csv")
+# copying data to another variable to avoid any changes to original data
+data <- hotel
+```
+
+### View the first and last 5 rows of the dataset
+```{r}
+class(data)
+head(data)
+tail(data)
+```
+
+### Check info of the data
+```{r}
+str(data)
+```
