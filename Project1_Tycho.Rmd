@@ -68,3 +68,26 @@ tail(data)
 ```{r}
 str(data)
 ```
+### Cleaning
+We can see that all of the entries in the Booking_ID column are unique. Hence, this column would not add any value to our analysis. Let's drop this column.
+```{r}
+data <- data[ , !(names(data) %in% c("Booking_ID"))]
+head(data)
+```
+
+## Summary Statistics for Numerical Columns
+```{r}
+num_cols <- sapply(data, is.numeric)
+summary(data[ , num_cols])
+```
+**Observations:**
+
+- The average price per room is 103.4 euro. It has a wide range up to 540 euro. The median is 99 euro, so there seems to be high-price outlier rooms.
+
+- There are entries where the average price per room is zero. This needs to be examined further. Perhaps promotional deals?
+
+- The mean number of week nights for a stay is 2.2 while it is 0.81 weekend days.
+
+- The average number of previous cancellations is 0.02. The quartiles are all zero and the maximum is 58, indicating possibly sparse data.
+
+- The average lead time is 85 days. The median is 57 and the max is 443. There are high lead time outliers and the distribution is likely skewed to the right.
