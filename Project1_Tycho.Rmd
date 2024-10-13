@@ -97,3 +97,19 @@ summary(data[ , num_cols])
 - The average number of previous cancellations is 0.02. The quartiles are all zero and the maximum is 58, indicating possibly sparse data.
 
 - The average lead time is 85 days. The median is 57 and the max is 443. There are high lead time outliers and the distribution is likely skewed to the right.
+
+## Bar plot to show distribution of cancellations vs non-cancellations
+```{r}
+print(ggplot(data, aes(x = booking_status)) +
+  geom_bar(fill = "skyblue") +
+  labs(title = "Booking Status Distribution (Canceled vs Not Canceled)",
+       x = "Booking Status", y = "Count"))
+```
+
+## Box plot for Lead Time vs Cancellations:
+```{r}
+# Box plot for lead time vs. cancellations
+print(ggplot(data, aes(x = booking_status, y = lead_time, fill = booking_status)) +
+  geom_boxplot() +
+  labs(title = "Lead Time by Booking Status", x = "Booking Status", y = "Lead Time"))
+```
