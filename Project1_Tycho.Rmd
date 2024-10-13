@@ -68,11 +68,17 @@ tail(data)
 ```{r}
 str(data)
 ```
+
 ### Cleaning
 We can see that all of the entries in the Booking_ID column are unique. Hence, this column would not add any value to our analysis. Let's drop this column.
 ```{r}
 data <- data[ , !(names(data) %in% c("Booking_ID"))]
 head(data)
+```
+
+## Check for missing values
+```{r}
+sum(is.na(data))
 ```
 
 ## Summary Statistics for Numerical Columns
