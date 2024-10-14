@@ -26,8 +26,9 @@ options(scientific=T, digits = 3)
 
 ## **About The Project**
 
-**In the hotel industry, effective management of bookings is crucial for optimizing revenue and ensuring operational efficiency. Hotels experience a variety of booking patterns, some of which include cancellations or no-shows. While some customers may cancel due to changing plans, others may not show up despite a confirmed reservation. To mitigate financial losses and maximize occupancy, it’s important for hotels to understand the underlying factors that contribute to these cancellations.**\
-**In this project, we aim to study the factors influencing hotel booking cancellations and no-shows while answering some SMART questions. By examining customer attributes such as room preferences, lead time (the number of days between the booking date and arrival date), meal plan choices, and past booking behavior, we will identify key patterns and trends. Additionally, we will analyze other variables such as special requests, arrival month and market segments.**\
+In the hotel industry, effective management of bookings is crucial for optimizing revenue and ensuring operational efficiency. Hotels experience a variety of booking patterns, some of which include cancellations or no-shows. While some customers may cancel due to changing plans, others may not show up despite a confirmed reservation. To mitigate financial losses and maximize occupancy, it’s important for hotels to understand the underlying factors that contribute to these cancellations.\
+
+In this project, we aim to study the factors influencing hotel booking cancellations and no-shows while answering some SMART questions. By examining customer attributes such as room preferences, lead time (the number of days between the booking date and arrival date), meal plan choices, and past booking behavior, we will identify key patterns and trends. Additionally, we will analyze other variables such as special requests, arrival month and market segments.\
 
 ## **SMART Questions**
 
@@ -39,7 +40,7 @@ options(scientific=T, digits = 3)
 
 ## **About The Dataset**
 
-**For this project, we have selected a hotel booking dataset containing over 36,000 records of bookings. [INNHotelsGroup dataset](https://www.kaggle.com/datasets/mariyamalshatta/inn-hotels-group) from Kaggle. This dataset offers a comprehensive overview of hotel booking patterns, making it ideal for our analysis on cancellations and no-shows.**
+For this project, we have selected a hotel booking dataset containing over 36,000 records of bookings. [INNHotelsGroup dataset](https://www.kaggle.com/datasets/mariyamalshatta/inn-hotels-group) from Kaggle. This dataset offers a comprehensive overview of hotel booking patterns, making it ideal for our analysis on cancellations and no-shows.
 
 ```{r import_dataset}
 hotel_data = read.csv("DATS6101_PROJECT-1/Dataset/INNHotelsGroup.csv")
@@ -47,7 +48,7 @@ hotel_data = read.csv("DATS6101_PROJECT-1/Dataset/INNHotelsGroup.csv")
 
 This dataset contains `r nrow(hotel_data)` observations of `r ncol(hotel_data)` variables. Out of these observations, `r sum(is.na(hotel_data))` rows contain null values.
 
-## Cleaning the dataset
+## **Cleaning The Dataset**
 
 For our project, we are interested in majority of the variables but there are some irrelevant columns with respect to our objective and thus we will drop them.
 
@@ -129,11 +130,13 @@ ggplot(hotel_data_clean, aes(x = factor(no_of_special_requests))) +
   theme_minimal()
 ```
 
+The bar chart shows that most hotel bookings have zero or one special request, with about 20,000 and 13,000 bookings, respectively. The number of bookings decreases sharply as the number of requests increases. Very few customers make more than two requests, indicating minimal specific demands from the majority.
+
 # **Statistical Analysis** 
 
 ## **1. T-Test: Special Requests vs. No Special Requests**
-**Null Hypothesis (H₀)**: There is no significant difference in the cancellation rates between customers who make special requests and those who do not.
-**Alternative Hypothesis (H₁:)** Customers with special requests cancel less frequently than those without.
+**Null Hypothesis (H₀)**: There is no significant difference in the cancellation rates between customers who make special requests and those who do not.\
+**Alternative Hypothesis (H₁:)** Customers with special requests cancel less frequently than those without.\
 
 ```{r}
 with_requests <- hotel_data_clean[hotel_data_clean$no_of_special_requests > 0, "booking_status"]
@@ -146,8 +149,8 @@ t_test_result <- t.test(with_requests, without_requests)
 print(t_test_result)
 ```
 ## **2. Chi-Square Test: Previous Cancellations vs. Current Cancellation**
-**Null Hypothesis (H₀):** There is no association between having previous cancellations and the likelihood of canceling the current booking.
-**Alternative Hypothesis (H₁):** Guests with no previous cancellations are less likely to cancel their current booking.
+**Null Hypothesis (H₀):** There is no association between having previous cancellations and the likelihood of canceling the current booking.\
+**Alternative Hypothesis (H₁):** Guests with no previous cancellations are less likely to cancel their current booking.\
 
 ```{r}
 # Create a contingency table
@@ -159,24 +162,24 @@ print(chi_square_test)
 
 ```
 ## **Correlation Matrix: Key Factors Influencing Cancellations**
-**Null Hypothesis (H₀):** There is no correlation between the selected factors (lead time, price, special requests, etc.) and booking cancellations.
-**Alternative Hypothesis (H₁):** There is a significant correlation between one or more factors and booking cancellations.
+**Null Hypothesis (H₀):** There is no correlation between the selected factors (lead time, price, special requests, etc.) and booking cancellations.\
+**Alternative Hypothesis (H₁):** There is a significant correlation between one or more factors and booking cancellations.\
 
 ```{r}
 
 ```
 
 ## **4th SMART Question**
-**Null Hypothesis (H₀):**
-**Alternative Hypothesis (H₁):**
+**Null Hypothesis (H₀):**\
+**Alternative Hypothesis (H₁):**\
 
 ```{r}
 
 ```
 
 ## **5th SMART Question**
-**Null Hypothesis (H₀):**
-**Alternative Hypothesis (H₁):**
+**Null Hypothesis (H₀):**\
+**Alternative Hypothesis (H₁):**\
 
 ```{r}
 
