@@ -113,3 +113,12 @@ print(ggplot(data, aes(x = booking_status, y = lead_time, fill = booking_status)
   geom_boxplot() +
   labs(title = "Lead Time by Booking Status", x = "Booking Status", y = "Lead Time"))
 ```
+
+## Average Price per Room vs Cancellations
+```{r}
+# Histogram for average price per room by booking status
+print(ggplot(data, aes(x = avg_price_per_room, fill = booking_status)) +
+  geom_histogram(bins = 30, position = "dodge") +
+  labs(title = "Distribution of Average Price per Room by Booking Status",
+       x = "Average Price per Room", y = "Count"))
+```
