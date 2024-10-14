@@ -122,3 +122,28 @@ print(ggplot(data, aes(x = avg_price_per_room, fill = booking_status)) +
   labs(title = "Distribution of Average Price per Room by Booking Status",
        x = "Average Price per Room", y = "Count"))
 ```
+
+
+
+## Seasonality Analysis:
+```{r}
+# Define seasons based on arrival month
+data$season <- case_when(
+  data$arrival_month %in% c(3, 4, 5) ~ "Spring",
+  data$arrival_month %in% c(6, 7, 8) ~ "Summer",
+  data$arrival_month %in% c(9, 10, 11) ~ "Fall",
+  data$arrival_month %in% c(12, 1, 2) ~ "Winter",
+  TRUE ~ "Unknown"
+)
+# Convert booking_status to a binary variable
+data$booking_status_binary <- ifelse(data$booking_status == "Canceled", 1, 0)
+```
+
+### Creating subsets for each season:
+```{r}
+# Create subsets for each season
+spring_data <- subset(data, season == "Spring")
+summer_data <- subset(data, season == "Summer")
+fall_data <- subset(data, season == "Fall")
+winter_data <- subset(data, season == "Winter")
+```
