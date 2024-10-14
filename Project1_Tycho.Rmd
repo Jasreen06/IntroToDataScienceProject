@@ -163,28 +163,28 @@ winter_data_filtered <- remove_zero_variance(select_if(winter_data, is.numeric))
 ```
 
 ### Calculate correlation matrices:
-```{r}
+```{r, fig.width=10, fig.height=10}
 # Calculate and visualize correlation for Spring
 cor_spring <- cor(spring_data_filtered, use = "complete.obs")
 corrplot(cor_spring, method = "color", addCoef.col = "black", 
-         title = "Correlation Matrix for Spring", number.cex = 0.7, 
-         tl.cex = 0.8, mar = c(0, 0, 2, 0))
+         title = "Correlation Matrix for Spring", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
 
 # Calculate and visualize correlation for Summer
 cor_summer <- cor(summer_data_filtered, use = "complete.obs")
 corrplot(cor_summer, method = "color", addCoef.col = "black", 
-         title = "Correlation Matrix for Summer", number.cex = 0.7, 
-         tl.cex = 0.8, mar = c(0, 0, 2, 0))
+         title = "Correlation Matrix for Summer", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
 
 # Calculate and visualize correlation for Fall
 cor_fall <- cor(fall_data_filtered, use = "complete.obs")
 corrplot(cor_fall, method = "color", addCoef.col = "black", 
-         title = "Correlation Matrix for Fall", number.cex = 0.7, 
-         tl.cex = 0.8, mar = c(0, 0, 2, 0))
+         title = "Correlation Matrix for Fall", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
 
 # Calculate and visualize correlation for Winter
 cor_winter <- cor(winter_data_filtered, use = "complete.obs")
 corrplot(cor_winter, method = "color", addCoef.col = "black", 
-         title = "Correlation Matrix for Winter", number.cex = 0.7, 
-         tl.cex = 0.8, mar = c(0, 0, 2, 0))
+         title = "Correlation Matrix for Winter", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
 ```
