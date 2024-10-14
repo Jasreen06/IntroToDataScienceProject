@@ -72,6 +72,9 @@ ggplot(hotel_data_clean, aes(x = booking_status)) +
   geom_bar(fill = "lightblue") +
   labs(title = "Booking Status Distribution", x = "Booking Status", y = "Count")
 ```
+
+The number of non-canceled bookings is significantly higher than the number of canceled bookings. This indicates that most bookings in the dataset were not canceled.
+
 ## **2. Analysis of Meal Plan Type**
 ```{r}
 ggplot(hotel_data_clean, aes(x = type_of_meal_plan, fill = booking_status)) +
@@ -79,12 +82,21 @@ ggplot(hotel_data_clean, aes(x = type_of_meal_plan, fill = booking_status)) +
   labs(title = "Cancellation Rate by Meal Plan", x = "Meal Plan", y = "Proportion", fill = "Booking Status")
 ```
 
+Meal Plan 1 has the highest cancellation rate, where more than half of the bookings are canceled.
+Meal Plan 2 has a lower cancellation rate, with cancellations and non-cancellations being nearly equal.
+Meal Plan 3 shows the highest proportion of non-cancelled bookings compared to canceled ones, suggesting customers choosing this meal plan tend to cancel less frequently.
+For the "Not Selected" category, there is a relatively high cancellation rate, similar to Meal Plan 1.
+
 ## **3. Distribution of Room Types**
 ```{r}
 ggplot(hotel_data_clean, aes(x = room_type_reserved, fill = booking_status)) +
   geom_bar(position = "fill") +
   labs(title = "Cancellation Rate by Room Type", x = "Room Type", y = "Proportion", fill = "Booking Status")
 ```
+
+Room Type 1 and Room Type 6 have the highest cancellation rates, with a large proportion of canceled bookings.
+Room Type 7 stands out as having the highest proportion of non-cancelled bookings, suggesting it may be a preferred or better-secured type of room.
+For other room types, the rates are fairly similar, with around 60-70% of bookings not canceled, except for Room Type 1 which has more cancellations.
 
 ## **4. Histograms and Boxplots for Each Variable**
 ```{r}
