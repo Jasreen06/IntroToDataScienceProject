@@ -147,3 +147,44 @@ summer_data <- subset(data, season == "Summer")
 fall_data <- subset(data, season == "Fall")
 winter_data <- subset(data, season == "Winter")
 ```
+
+### Remove columns with zero variance
+```{r}
+# Function to remove columns with zero variance
+remove_zero_variance <- function(df) {
+  df[, sapply(df, function(col) sd(col, na.rm = TRUE) != 0)]
+}
+
+# Remove zero variance columns for each season
+spring_data_filtered <- remove_zero_variance(select_if(spring_data, is.numeric))
+summer_data_filtered <- remove_zero_variance(select_if(summer_data, is.numeric))
+fall_data_filtered <- remove_zero_variance(select_if(fall_data, is.numeric))
+winter_data_filtered <- remove_zero_variance(select_if(winter_data, is.numeric))
+```
+
+### Calculate correlation matrices:
+```{r}
+# Calculate and visualize correlation for Spring
+cor_spring <- cor(spring_data_filtered, use = "complete.obs")
+corrplot(cor_spring, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Spring", number.cex = 0.7, 
+         tl.cex = 0.8, mar = c(0, 0, 2, 0))
+
+# Calculate and visualize correlation for Summer
+cor_summer <- cor(summer_data_filtered, use = "complete.obs")
+corrplot(cor_summer, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Summer", number.cex = 0.7, 
+         tl.cex = 0.8, mar = c(0, 0, 2, 0))
+
+# Calculate and visualize correlation for Fall
+cor_fall <- cor(fall_data_filtered, use = "complete.obs")
+corrplot(cor_fall, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Fall", number.cex = 0.7, 
+         tl.cex = 0.8, mar = c(0, 0, 2, 0))
+
+# Calculate and visualize correlation for Winter
+cor_winter <- cor(winter_data_filtered, use = "complete.obs")
+corrplot(cor_winter, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Winter", number.cex = 0.7, 
+         tl.cex = 0.8, mar = c(0, 0, 2, 0))
+```
