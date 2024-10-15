@@ -32,18 +32,18 @@ In this project, we aim to study the factors influencing hotel booking cancellat
 
 ## **SMART Questions**
 
-**1.**\
-**2.**\
-**3.**\
-**4.**\
-**5.**\
+**1.    **How much less frequently do customers who make special requests cancel from 2017 to 2018 than those who don't?\ 
+**2.    **Are guests with no previous cancellations more likely to avoid canceling their current booking?\
+**3.    **What are the key factors that show the strongest correlation with booking cancellations?\
+**4.    **How do hotel cancellation rates change across different seasons (spring, fall, winter, summer, holidays, low season), and which factors (e.g., lead time, room type/) correlate most strongly with cancellations during each season?\
+**5.    **What are the differences in cancellation rates based on meal plan type, lead time, room type, and market segment, and what are the 95% confidence intervals for these rates?\
 
 ## **About The Dataset**
 
 For this project, we have selected a hotel booking dataset containing over 36,000 records of bookings. [INNHotelsGroup dataset](https://www.kaggle.com/datasets/mariyamalshatta/inn-hotels-group) from Kaggle. This dataset offers a comprehensive overview of hotel booking patterns, making it ideal for our analysis on cancellations and no-shows.
 
 ```{r import_dataset}
-hotel_data = read.csv("DATS6101_PROJECT-1/Dataset/INNHotelsGroup.csv")
+hotel_data <- read.csv("../Dataset/INNHotelsGroup.csv")
 ```
 
 This dataset contains `r nrow(hotel_data)` observations of `r ncol(hotel_data)` variables. Out of these observations, `r sum(is.na(hotel_data))` rows contain null values.
@@ -62,7 +62,7 @@ hotel_data_clean <- na.omit(hotel_data_clean)
 After cleaning, we are left with `r nrow(hotel_data_clean)` observations of `r ncol(hotel_data_clean)` variables.
 
 ```{r save_data}
-write.csv(hotel_data_clean,"DATS6101_PROJECT-1/Dataset/INNHotelsGroup_min.csv", row.names = F)
+write.csv(hotel_data_clean,"../Dataset/INNHotelsGroup_min.csv", row.names = F)
 ```
 
 # **Exploratory Data Analysis (EDA)**
@@ -148,19 +148,22 @@ without_requests <- ifelse(without_requests == "Canceled", 1, 0)
 t_test_result <- t.test(with_requests, without_requests)
 print(t_test_result)
 ```
+
+The p-value is extremely small (< 2e-16), which is well below the conventional significance threshold of 0.05. As a result, we reject the null hypothesis. The findings from the t-test provide strong evidence that customers who make special requests are significantly less likely to cancel their bookings than those who do not. This suggests that customers who engage more actively with the hotel by making special requests may have a higher level of commitment to their reservations, possibly due to personalized services or the desire for a more tailored experience. Hotels may consider leveraging this insight by encouraging guests to make special requests as a strategy to reduce cancellations and increase booking stability.
+
 ## **2. Chi-Square Test: Previous Cancellations vs. Current Cancellation**
 **Null Hypothesis (H₀):** There is no association between having previous cancellations and the likelihood of canceling the current booking.\
 **Alternative Hypothesis (H₁):** Guests with no previous cancellations are less likely to cancel their current booking.\
 
 ```{r}
-# Create a contingency table
 contingency_table <- table(hotel_data_clean$no_of_previous_cancellations > 0, hotel_data_clean$booking_status == "Canceled")
 
-# Perform chi-square test
 chi_square_test <- chisq.test(contingency_table)
 print(chi_square_test)
-
 ```
+
+The results of the Pearson's Chi-squared test indicate a strong association between having previous cancellations and the likelihood of canceling the current booking. The p-value is extremely small (< 2e-16), which is significantly below the conventional significance level of 0.05. Therefore, we reject the null hypothesis. This evidence supports the alternative hypothesis that guests with no prior cancellations are less likely to cancel their current booking. This finding highlights the importance of previous booking behavior as a predictor of future cancellations. Hotels can utilize this insight by identifying and targeting guests with clean cancellation histories, potentially implementing strategies to foster loyalty among these customers, thereby reducing overall cancellation rates.
+
 ## **Correlation Matrix: Key Factors Influencing Cancellations**
 **Null Hypothesis (H₀):** There is no correlation between the selected factors (lead time, price, special requests, etc.) and booking cancellations.\
 **Alternative Hypothesis (H₁):** There is a significant correlation between one or more factors and booking cancellations.\
@@ -187,8 +190,3 @@ print(chi_square_test)
 
 # **Conclusion**
 
-## **1st Question** 
-The p-value is extremely small (< 2e-16), which is well below the conventional significance threshold of 0.05. As a result, we reject the null hypothesis. The findings from the t-test provide strong evidence that customers who make special requests are significantly less likely to cancel their bookings than those who do not. This suggests that customers who engage more actively with the hotel by making special requests may have a higher level of commitment to their reservations, possibly due to personalized services or the desire for a more tailored experience. Hotels may consider leveraging this insight by encouraging guests to make special requests as a strategy to reduce cancellations and increase booking stability.
-
-## **2nd Question**
-The results of the Pearson's Chi-squared test indicate a strong association between having previous cancellations and the likelihood of canceling the current booking. The p-value is extremely small (< 2e-16), which is significantly below the conventional significance level of 0.05. Therefore, we reject the null hypothesis. This evidence supports the alternative hypothesis that guests with no prior cancellations are less likely to cancel their current booking. This finding highlights the importance of previous booking behavior as a predictor of future cancellations. Hotels can utilize this insight by identifying and targeting guests with clean cancellation histories, potentially implementing strategies to foster loyalty among these customers, thereby reducing overall cancellation rates.
