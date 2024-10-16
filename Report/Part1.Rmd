@@ -48,6 +48,15 @@ hotel_data <- read.csv("../Dataset/INNHotelsGroup.csv")
 
 This dataset contains `r nrow(hotel_data)` observations of `r ncol(hotel_data)` variables. Out of these observations, `r sum(is.na(hotel_data))` rows contain null values.
 
+```{r data_structure}
+str(hotel_data)
+```
+
+```{r data_unique_values}
+print(unique(hotel_data$no_of_special_requests))
+print(unique(hotel_data$booking_status))
+```
+
 ## **Cleaning The Dataset**
 
 For our project, we are interested in majority of the variables but there are some irrelevant columns with respect to our objective and thus we will drop them.
@@ -68,77 +77,112 @@ write.csv(hotel_data_clean,"../Dataset/INNHotelsGroup_min.csv", row.names = F)
 # **Exploratory Data Analysis (EDA)**
 
 ## **1. Distribution of Booking Status**
-```{r}
+```{r plot1}
 ggplot(hotel_data_clean, aes(x = booking_status)) +
   geom_bar(fill = "lightblue") +
   labs(title = "Booking Status Distribution", x = "Booking Status", y = "Count")
 ```
 
+**Summary**
 The number of non-canceled bookings is significantly higher than the number of canceled bookings. This indicates that most bookings in the dataset were not canceled.
 
 ## **2. Analysis of Meal Plan Type**
-```{r}
+```{r plot2}
 ggplot(hotel_data_clean, aes(x = type_of_meal_plan, fill = booking_status)) +
   geom_bar(position = "fill") +
   labs(title = "Cancellation Rate by Meal Plan", x = "Meal Plan", y = "Proportion", fill = "Booking Status")
 ```
 
+**Summary**
 Meal Plan 1 has the highest cancellation rate, where more than half of the bookings are canceled.
 Meal Plan 2 has a lower cancellation rate, with cancellations and non-cancellations being nearly equal.
 Meal Plan 3 shows the highest proportion of non-cancelled bookings compared to canceled ones, suggesting customers choosing this meal plan tend to cancel less frequently.
 For the "Not Selected" category, there is a relatively high cancellation rate, similar to Meal Plan 1.
 
 ## **3. Distribution of Room Types**
-```{r}
+```{r plot3}
 ggplot(hotel_data_clean, aes(x = room_type_reserved, fill = booking_status)) +
   geom_bar(position = "fill") +
   labs(title = "Cancellation Rate by Room Type", x = "Room Type", y = "Proportion", fill = "Booking Status")
 ```
 
+**Summary**
 Room Type 1 and Room Type 6 have the highest cancellation rates, with a large proportion of canceled bookings.
 Room Type 7 stands out as having the highest proportion of non-cancelled bookings, suggesting it may be a preferred or better-secured type of room.
 For other room types, the rates are fairly similar, with around 60-70% of bookings not canceled, except for Room Type 1 which has more cancellations.
 
 ## **4. Barplot: Number of Special Requests**
-```{r}
+```{r plot4}
 ggplot(hotel_data_clean, aes(x = factor(no_of_special_requests))) +
   geom_bar(fill = "orange") +
   labs(title = "Number of Special Requests", x = "Number of Special Requests", y = "Count") +
   theme_minimal()
 ```
 
+**Summary**
 The bar chart shows that most hotel bookings have zero or one special request, with about 20,000 and 13,000 bookings, respectively. The number of bookings decreases sharply as the number of requests increases. Very few customers make more than two requests, indicating minimal specific demands from the majority.
 
 # **Statistical Analysis** 
 
-## **1. T-Test: Special Requests vs. No Special Requests**
+## **1. Chi-Square Test: Special Requests vs. No Special Requests**
 **Null Hypothesis (H₀)**: There is no significant difference in the cancellation rates between customers who make special requests and those who do not.\
 **Alternative Hypothesis (H₁:)** Customers with special requests cancel less frequently than those without.\
 
-```{r}
+```{r chi_sqaure_test1}
+hotel_data_clean <- hotel_data_clean %>%
+  mutate(has_special_requests = ifelse(no_of_special_requests > 0, "Yes", "No"),
+         is_cancelled = ifelse(booking_status == "Canceled", "Canceled", "Not_Canceled"))
 
+print(table(hotel_data_clean$has_special_requests))
+print(table(hotel_data_clean$is_cancelled))
+
+special_requests_table <- table(hotel_data_clean$has_special_requests, hotel_data_clean$is_cancelled)
+
+sum(special_requests_table) > 0
+  special_requests_test <- chisq.test(special_requests_table)
+
+  special_requests_props <- prop.table(special_requests_table, margin = 1)
+
+  ggplot(hotel_data_clean, aes(x = has_special_requests, fill = is_cancelled)) +
+    geom_bar(position = "fill") +
+    labs(title = "Cancellation Rates by Special Requests",
+         x = "Has Special Requests", y = "Proportion") +
+    theme_minimal()
 ```
 
+The chi-square test's extremely low p-value (< 0.05) indicates strong evidence against the null hypothesis. We can reject the null hypothesis and conclude that there is a significant association between special requests and cancellation rates.
 
+Bookings with special requests have a much lower cancellation rate (20.2%) compared to those without (43.2%). The data strongly suggests that customers who make special requests are more likely to follow through with their bookings and significantly less likely to cancel their bookings.
 
 ## **2. Chi-Square Test: Previous Cancellations vs. Current Cancellation**
 **Null Hypothesis (H₀):** There is no association between having previous cancellations and the likelihood of canceling the current booking.\
 **Alternative Hypothesis (H₁):** Guests with no previous cancellations are less likely to cancel their current booking.\
 
-```{r}
-contingency_table <- table(hotel_data_clean$no_of_previous_cancellations > 0, hotel_data_clean$booking_status == "Canceled")
+```{r chi_sqaure_test2}
+hotel_data_clean <- hotel_data_clean %>%
+  mutate(has_previous_cancellations = ifelse(no_of_previous_cancellations > 0, "Yes", "No"))
 
-chi_square_test <- chisq.test(contingency_table)
-print(chi_square_test)
+previous_cancellations_table <- table(hotel_data_clean$has_previous_cancellations, hotel_data_clean$is_cancelled)
+previous_cancellations_test <- chisq.test(previous_cancellations_table)
+
+previous_cancellations_props <- prop.table(previous_cancellations_table, margin = 1)
+
+ggplot(hotel_data_clean, aes(x = has_previous_cancellations, fill = is_cancelled)) +
+  geom_bar(position = "fill") +
+  labs(title = "Cancellation Rates by Previous Cancellations",
+       x = "Has Previous Cancellations", y = "Proportion") +
+  theme_minimal()
 ```
 
-The results of the Pearson's Chi-squared test indicate a strong association between having previous cancellations and the likelihood of canceling the current booking. The p-value is extremely small (< 2e-16), which is significantly below the conventional significance level of 0.05. Therefore, we reject the null hypothesis. This evidence supports the alternative hypothesis that guests with no prior cancellations are less likely to cancel their current booking. This finding highlights the importance of previous booking behavior as a predictor of future cancellations. Hotels can utilize this insight by identifying and targeting guests with clean cancellation histories, potentially implementing strategies to foster loyalty among these customers, thereby reducing overall cancellation rates.
+The chi-square test's extremely low p-value (< 0.05) indicates strong evidence against the null hypothesis. We can reject the null hypothesis and conclude that there is a significant association between having previous cancellations and the likelihood of canceling the current booking.
+
+Surprisingly, bookings from guests with previous cancellations have a much lower cancellation rate (4.73%) compared to those without previous cancellations (33.03%). This represents a substantial difference of about 28.3 percentage points.
 
 ## **Correlation Matrix: Key Factors Influencing Cancellations**
 **Null Hypothesis (H₀):** There is no correlation between the selected factors (lead time, price, special requests, etc.) and booking cancellations.\
 **Alternative Hypothesis (H₁):** There is a significant correlation between one or more factors and booking cancellations.\
 
-```{r}
+```{r test3}
 
 ```
 
@@ -146,7 +190,7 @@ The results of the Pearson's Chi-squared test indicate a strong association betw
 **Null Hypothesis (H₀):**\
 **Alternative Hypothesis (H₁):**\
 
-```{r}
+```{r test4}
 
 ```
 
@@ -154,7 +198,7 @@ The results of the Pearson's Chi-squared test indicate a strong association betw
 **Null Hypothesis (H₀):**\
 **Alternative Hypothesis (H₁):**\
 
-```{r}
+```{r test5}
 
 ```
 
