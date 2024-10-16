@@ -160,6 +160,18 @@ corrplot(cor_data, method = "color", addCoef.col = "black",
          title = "Correlation Matrix for Entire Dataset", number.cex = 1, 
          tl.cex = 0.8, mar = c(1, 1, 2, 1))
 ```
+The correlation matrix for the entire dataset reveals several key insights regarding factors associated with booking cancellations. Lead time shows the strongest positive correlation with cancellations (0.44), indicating that bookings made further in advance are more likely to be canceled. This makes sense, since customers have more time to change their plans or reconsider their bookings when the time between reservation and stay is longer.
+
+The number of special requests has a negative correlation (-0.25) with cancellations, implying that customers who make more personalized arrangements, such as requesting specific room types or amenities, are generally more committed to their bookings and less likely to cancel.
+
+The average price per room shows a weak positive correlation (0.14), suggesting that higher-priced bookings are slightly more prone to cancellation, although this relationship is not very strong. It's possible that the higher financial commitment associated with more expensive rooms leads some customers to reconsider their bookings. Meanwhile, being a repeated guest has a small negative correlation (-0.11) with cancellations, indicating that loyal customers are slightly less likely to cancel their bookings.
+
+Interestingly, factors such as the number of adults, children, weekend nights, and week nights show little to no correlation with cancellations, suggesting that the composition of the travel party and the length of stay do not significantly impact the likelihood of a booking being canceled.
+
+In summary, lead time stands out as the most significant predictor of cancellations, while customer loyalty factors such as number of special requests, and being a repeated guest reduce the likelihood of cancellations. Although price plays a role, it is not a major determinant of cancellation behavior. 
+
+In addition to analyzing the overall correlations in the dataset, I decided to perform a seasonality correlation analysis to explore how booking behavior might vary across different times of the year. Since factors like lead time, pricing, and cancellation rates can fluctuate with seasonal trends, understanding how these relationships change across spring, summer, fall, and winter could provide deeper insights into customer behavior and help tailor strategies to minimize cancellations based on seasonal patterns.
+
 
 ## Seasonality Analysis:
 ```{r}
