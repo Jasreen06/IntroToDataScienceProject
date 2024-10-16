@@ -50,6 +50,19 @@ The data contains the different attributes of customers' booking details. The de
 * no_of_special_requests: Total number of special requests made by the customer (e.g. high floor, view from the room, etc)
 * booking_status: Flag indicating if the booking was canceled or not.
 
+```{r init, include=FALSE}
+#Import required libraries
+library(ezids)
+library(ggplot2)
+library(dplyr)
+library(corrplot)
+#install.packages("knitr")
+#install.packages("evaluate")
+#Setup knitter options
+knitr::opts_chunk$set(warning = F, message = F)
+options(scientific=T, digits = 3)
+```
+
 ### Loading Data
 ```{r}
 hotel <- read.csv("INNHotelsGroup.csv")
@@ -59,38 +72,33 @@ data <- hotel
 
 ### View the first and last 5 rows of the dataset
 ```{r}
-class(data)
+str(data)
 head(data)
 tail(data)
 ```
 
-### Check info of the data
-```{r}
-str(data)
-```
-
 ### Cleaning
-We can see that all of the entries in the Booking_ID column are unique. Hence, this column would not add any value to our analysis. Let's drop this column.
+We can see that all of the entries in the Booking_ID column are unique. Hence, this column would not add any value to our analysis. Let's drop this column. We also don't need arrival_date, as we are not using specific dates in our analysis.
 ```{r}
-data <- data[ , !(names(data) %in% c("Booking_ID"))]
+data <- data[ , !(names(data) %in% c("Booking_ID", "arrival_date"))]
 head(data)
 ```
 
 ## Check for missing values
 ```{r}
-sum(is.na(data))
+print(sum(is.na(data)))
 ```
 
 ## Summary Statistics for Numerical Columns
 ```{r}
 num_cols <- sapply(data, is.numeric)
-summary(data[ , num_cols])
+print(summary(data[ , num_cols]))
 ```
 **Observations:**
 
-- The average price per room is 103.4 euro. It has a wide range up to 540 euro. The median is 99 euro, so there seems to be high-price outlier rooms.
+- The average price per room is 103.4 euros. It has a wide range up to 540 euros. The median is 99 euros, so there seems to be high-price outlier rooms.
 
-- There are entries where the average price per room is zero. This needs to be examined further. Perhaps promotional deals?
+- There are entries where the average price per room is zero. Perhaps promotional deals?
 
 - The mean number of week nights for a stay is 2.2 while it is 0.81 weekend days.
 
@@ -105,6 +113,8 @@ print(ggplot(data, aes(x = booking_status)) +
   labs(title = "Booking Status Distribution (Canceled vs Not Canceled)",
        x = "Booking Status", y = "Count"))
 ```
+There were around half as many cancelled bookings as there were non cancelled bookings. Imagine how much profit the hotels are losing! 
+
 
 ## Box plot for Lead Time vs Cancellations:
 ```{r}
@@ -113,6 +123,7 @@ print(ggplot(data, aes(x = booking_status, y = lead_time, fill = booking_status)
   geom_boxplot() +
   labs(title = "Lead Time by Booking Status", x = "Booking Status", y = "Lead Time"))
 ```
+From the chart, there appears to be a relationship between booking status and lead time. On average, guests who cancelled their booking tended to have a higher lead time.
 
 ## Average Price per Room vs Cancellations
 ```{r}
@@ -122,7 +133,44 @@ print(ggplot(data, aes(x = avg_price_per_room, fill = booking_status)) +
   labs(title = "Distribution of Average Price per Room by Booking Status",
        x = "Average Price per Room", y = "Count"))
 ```
+Non-canceled bookings tend to be more frequent across all price ranges, and while cancellations occur, they don’t disproportionately increase as the price per room rises. 
 
+
+
+
+## Correlation Analysis:
+```{r, fig.width=10, fig.height=10}
+# Convert booking_status to a binary variable
+data$booking_status_binary <- ifelse(data$booking_status == "Canceled", 1, 0)
+
+
+# Function to remove columns with zero variance
+remove_zero_variance <- function(df) {
+  df[, sapply(df, function(col) sd(col, na.rm = TRUE) != 0)]
+}
+
+# Remove columns with zero variance
+data_filtered <- remove_zero_variance(select_if(data, is.numeric))
+
+# Calculate the correlation matrix
+cor_data <- cor(data_filtered, use = "complete.obs")
+
+# Visualize the correlation matrix
+corrplot(cor_data, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Entire Dataset", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
+```
+The correlation matrix for the entire dataset reveals several key insights regarding factors associated with booking cancellations. Lead time shows the strongest positive correlation with cancellations (0.44), indicating that bookings made further in advance are more likely to be canceled. This makes sense, since customers have more time to change their plans or reconsider their bookings when the time between reservation and stay is longer.
+
+The number of special requests has a negative correlation (-0.25) with cancellations, implying that customers who make more personalized arrangements, such as requesting specific room types or amenities, are generally more committed to their bookings and less likely to cancel.
+
+The average price per room shows a weak positive correlation (0.14), suggesting that higher-priced bookings are slightly more prone to cancellation, although this relationship is not very strong. It's possible that the higher financial commitment associated with more expensive rooms leads some customers to reconsider their bookings. Meanwhile, being a repeated guest has a small negative correlation (-0.11) with cancellations, indicating that loyal customers are slightly less likely to cancel their bookings.
+
+Interestingly, factors such as the number of adults, children, weekend nights, and week nights show little to no correlation with cancellations, suggesting that the composition of the travel party and the length of stay do not significantly impact the likelihood of a booking being canceled.
+
+In summary, lead time stands out as the most significant predictor of cancellations, while customer loyalty factors such as number of special requests, and being a repeated guest reduce the likelihood of cancellations. Although price plays a role, it is not a major determinant of cancellation behavior. 
+
+In addition to analyzing the overall correlations in the dataset, I decided to perform a seasonality correlation analysis to explore how booking behavior might vary across different times of the year. Since factors like lead time, pricing, and cancellation rates can fluctuate with seasonal trends, understanding how these relationships change across spring, summer, fall, and winter could provide deeper insights into customer behavior and help tailor strategies to minimize cancellations based on seasonal patterns.
 
 
 ## Seasonality Analysis:
@@ -188,3 +236,22 @@ corrplot(cor_winter, method = "color", addCoef.col = "black",
          title = "Correlation Matrix for Winter", number.cex = 1, 
          tl.cex = 0.8, mar = c(1, 1, 2, 1))
 ```
+Fall Correlation Matrix:
+The strongest positive correlation with booking status (0.54) is lead time, suggesting that as the lead time increases, there is a higher chance of the booking being canceled. This makes sense, as bookings made far in advance may have a higher likelihood of being reconsidered or cancelled.
+Number of special requests has a slight negative correlation with booking status (-0.23), indicating that bookings with more special requests tend to have a lower likelihood of cancellation.
+
+Summer Correlation Matrix:
+Lead time continues to show a strong positive correlation (0.43) with booking status, compared to other variables, meaning that longer lead times are associated with cancellations during the summer as well.
+Number of special requests shows a moderate negative correlation (-0.30), reinforcing the idea that bookings with special requests are less likely to be cancelled.
+Average price per room has a weak positive correlation (0.22), suggesting that higher-priced rooms might be slightly more likely to be cancelled in the summer.
+
+Spring Correlation Matrix:
+The positive correlation with lead time remains somewhat significant at 0.29, consistent with the previous seasons. Longer lead times are associated with a higher likelihood of cancellation.
+Special requests have the strongest negative correlation (-0.36) in the spring, indicating that bookings with more special requests are much less likely to be canceled during this season.
+Average price per room shows a small positive correlation (0.13) with booking status, indicating a slight tendency for higher-priced bookings to be cancelled.
+
+Winter Correlation Matrix:
+Lead time remains a positive trending factor, with a correlation of 0.24. Longer lead times during the winter continue to be associated with higher cancellation rates.
+The number of special requests has a negative correlation (-0.14), suggesting that special requests still reduce the likelihood of cancellations in the winter, although the effect is less pronounced compared to other seasons.
+Average price per room has a slightly stronger positive correlation (0.36), indicating that higher-priced rooms may have a higher chance of being cancelled during the winter season.
+
