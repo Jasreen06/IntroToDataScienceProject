@@ -32,7 +32,7 @@ In this project, we aim to study the factors influencing hotel booking cancellat
 
 ## **SMART Questions**
 
-**1.    **How much less frequently do customers who make special requests cancel from 2017 to 2018 than those who don't?\ 
+**1.    **How much less frequently do customers who make special requests cancel from 2017 to 2018 than those who don't?\
 **2.    **Are guests with no previous cancellations more likely to avoid canceling their current booking?\
 **3.    **What are the key factors that show the strongest correlation with booking cancellations?\
 **4.    **How do hotel cancellation rates change across different seasons (spring, fall, winter, summer, holidays, low season), and which factors (e.g., lead time, room type/) correlate most strongly with cancellations during each season?\
@@ -40,7 +40,7 @@ In this project, we aim to study the factors influencing hotel booking cancellat
 
 ## **About The Dataset**
 
-For this project, we have selected a hotel booking dataset containing over 36,000 records of bookings. [INNHotelsGroup dataset](https://www.kaggle.com/datasets/mariyamalshatta/inn-hotels-group) from Kaggle. This dataset offers a comprehensive overview of hotel booking patterns, making it ideal for our analysis on cancellations and no-shows.
+For this project, we have selected a hotel booking dataset containing over 36,000 records of bookings. **[INNHotelsGroup dataset]**(https://www.kaggle.com/datasets/mariyamalshatta/inn-hotels-group) from Kaggle. This dataset offers a comprehensive overview of hotel booking patterns, making it ideal for our analysis on cancellations and no-shows.
 
 ```{r import_dataset}
 hotel_data <- read.csv("../Dataset/INNHotelsGroup.csv")
@@ -83,35 +83,35 @@ ggplot(hotel_data_clean, aes(x = booking_status)) +
   labs(title = "Booking Status Distribution", x = "Booking Status", y = "Count")
 ```
 
-**Summary**
+**Summary**   \
 The number of non-canceled bookings is significantly higher than the number of canceled bookings. This indicates that most bookings in the dataset were not canceled.
 
-## **2. Analysis of Meal Plan Type**
+## **2. Analysis of Meal Plan Type**\
 ```{r plot2}
 ggplot(hotel_data_clean, aes(x = type_of_meal_plan, fill = booking_status)) +
   geom_bar(position = "fill") +
   labs(title = "Cancellation Rate by Meal Plan", x = "Meal Plan", y = "Proportion", fill = "Booking Status")
 ```
 
-**Summary**
+**Summary** \ 
 Meal Plan 1 has the highest cancellation rate, where more than half of the bookings are canceled.
 Meal Plan 2 has a lower cancellation rate, with cancellations and non-cancellations being nearly equal.
 Meal Plan 3 shows the highest proportion of non-cancelled bookings compared to canceled ones, suggesting customers choosing this meal plan tend to cancel less frequently.
 For the "Not Selected" category, there is a relatively high cancellation rate, similar to Meal Plan 1.
 
-## **3. Distribution of Room Types**
+## **3. Distribution of Room Types**\
 ```{r plot3}
 ggplot(hotel_data_clean, aes(x = room_type_reserved, fill = booking_status)) +
   geom_bar(position = "fill") +
   labs(title = "Cancellation Rate by Room Type", x = "Room Type", y = "Proportion", fill = "Booking Status")
 ```
 
-**Summary**
+**Summary** \
 Room Type 1 and Room Type 6 have the highest cancellation rates, with a large proportion of canceled bookings.
 Room Type 7 stands out as having the highest proportion of non-cancelled bookings, suggesting it may be a preferred or better-secured type of room.
 For other room types, the rates are fairly similar, with around 60-70% of bookings not canceled, except for Room Type 1 which has more cancellations.
 
-## **4. Barplot: Number of Special Requests**
+## **4. Barplot: Number of Special Requests** \
 ```{r plot4}
 ggplot(hotel_data_clean, aes(x = factor(no_of_special_requests))) +
   geom_bar(fill = "orange") +
@@ -119,7 +119,7 @@ ggplot(hotel_data_clean, aes(x = factor(no_of_special_requests))) +
   theme_minimal()
 ```
 
-**Summary**
+**Summary** \ 
 The bar chart shows that most hotel bookings have zero or one special request, with about 20,000 and 13,000 bookings, respectively. The number of bookings decreases sharply as the number of requests increases. Very few customers make more than two requests, indicating minimal specific demands from the majority.
 
 # **Statistical Analysis** 
