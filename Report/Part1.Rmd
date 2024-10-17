@@ -143,6 +143,12 @@ sum(special_requests_table) > 0
 
   special_requests_props <- prop.table(special_requests_table, margin = 1)
 
+  print("Contingency Table:")
+print(special_requests_table)
+
+print("Chi-Square Test Results:")
+print(special_requests_test)
+
   ggplot(hotel_data_clean, aes(x = has_special_requests, fill = is_cancelled)) +
     geom_bar(position = "fill") +
     labs(title = "Cancellation Rates by Special Requests",
@@ -166,6 +172,12 @@ previous_cancellations_table <- table(hotel_data_clean$has_previous_cancellation
 previous_cancellations_test <- chisq.test(previous_cancellations_table)
 
 previous_cancellations_props <- prop.table(previous_cancellations_table, margin = 1)
+
+  print("Contingency Table:")
+print(previous_cancellations_table)
+
+print("Chi-Square Test Results:")
+print(previous_cancellations_test)
 
 ggplot(hotel_data_clean, aes(x = has_previous_cancellations, fill = is_cancelled)) +
   geom_bar(position = "fill") +
@@ -203,4 +215,9 @@ Surprisingly, bookings from guests with previous cancellations have a much lower
 ```
 
 # **Conclusion**
+
+1. This analysis suggests that a guest's previous cancellation history could be a reliable predictor of their future booking behavior. Hotels could use this information to refine their overbooking strategies, potentially allocating more flexible cancellation policies to first-time guests or those without a history of cancellations. Conversely, they might implement stricter policies or require deposits from guests with a history of cancellations to mitigate potential losses.
+
+2.Cancellation rate for bookings without special requests: 8545 / (8545 + 11232) ≈ 43.2%. Cancellation rate for bookings with special requests: 3340 / (3340 + 13158) ≈ 20.2%. There's a clear difference in cancellation rates, with bookings having special requests showing a significantly lower cancellation rate.
+
 
