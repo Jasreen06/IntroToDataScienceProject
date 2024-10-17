@@ -122,6 +122,31 @@ ggplot(hotel_data_clean, aes(x = factor(no_of_special_requests))) +
 **Summary** \ 
 The bar chart shows that most hotel bookings have zero or one special request, with about 20,000 and 13,000 bookings, respectively. The number of bookings decreases sharply as the number of requests increases. Very few customers make more than two requests, indicating minimal specific demands from the majority.
 
+## **5. Plot: Market Segment vs Booking Status** \
+```{r plot5}
+contingency_table <- table(hotel_data_clean$market_segment_type, hotel_data_clean$booking_status)
+
+plot_data <- as.data.frame(contingency_table)
+colnames(plot_data) <- c("Market_Segment", "Booking_Status", "Count")
+
+ggplot(plot_data, aes(x = Market_Segment, y = Count, fill = Booking_Status)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Booking Status by Market Segment",
+       x = "Market Segment",
+       y = "Count",
+       fill = "Booking Status") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+
+```
+
+**Summary** \ 
+
+
+
 # **Statistical Analysis** 
 
 ## **1. Chi-Square Test: Special Requests vs. No Special Requests**
