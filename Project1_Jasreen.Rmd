@@ -174,5 +174,94 @@ ttestlead_time <- t.test(df_canceled$lead_time, df_not_canceled$lead_time,
                        alternative = "two.sided", conf.level = 0.95)
 ttestlead_time
 ```
-**Conculusion 
+**Conculusion
+
+**T-Test for lead_time
+```{r}
+ttestlead_time <- t.test(df_canceled$lead_time, df_not_canceled$lead_time, 
+                       alternative = "two.sided", conf.level = 0.95)
+ttestlead_time
+```
+**Chi Sqaured test for room type
+```{r}
+df$room_type_reserved <- as.factor(df$room_type_reserved)
+df$booking_status <- as.factor(df$booking_status)
+
+# Create a contingency table
+contingency_table <- table(df$room_type_reserved, df$booking_status)
+
+# Perform the Chi-squared test
+chi_test_result <- chisq.test(contingency_table)
+
+# Display the result of the test
+print(chi_test_result)
+
+# Check if p-value is less than 0.05 to determine significance
+if (chi_test_result$p.value < 0.05) {
+  cat("There is a statistically significant association between room type and booking status.\n")
+} else {
+  cat("There is no statistically significant association between room type and booking status.\n")
+}
+
+```
+**Cancellation Rate by type
+```{r}
+cancellation_rates_room_type <- df %>%
+  group_by(room_type_reserved) %>%
+  summarise(
+    total_bookings = n(),
+    total_cancellations = sum(canceled == 1),
+    cancellation_rate = total_cancellations / total_bookings
+  )
+
+# Step 2: Print the cancellation rates for each room type
+print(cancellation_rates_room_type)
+
+# Step 3: Visualize the cancellation rates using a bar plot
+ggplot(cancellation_rates_room_type, aes(x = room_type_reserved, y = cancellation_rate)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  theme_minimal() +
+  ggtitle("Cancellation Rates by Room Type") +
+  xlab("Room Type") +
+  ylab("Cancellation Rate") +
+  coord_flip()
+```
+**Conslusion
+**Chi Sqaured test for meal plan type
+```{r}
+df$type_of_meal_plan <- as.factor(df$type_of_meal_plan)
+df$booking_status <- as.factor(df$booking_status)
+
+# Create a contingency table for meal plan and booking status
+contingency_table <- table(df$type_of_meal_plan, df$booking_status)
+
+# Perform the Chi-Squared test
+chi_test_result <- chisq.test(contingency_table)
+
+# Display the result
+print(chi_test_result)
+```
+**Cancellation Rate by Meal Plan type
+```{r}
+cancellation_rates_meal_plan <- df %>%
+  group_by(type_of_meal_plan) %>%
+  summarise(
+    total_bookings = n(),
+    total_cancellations = sum(canceled == 1),
+    cancellation_rate = total_cancellations / total_bookings
+  )
+
+# Step 2: Print the cancellation rates
+print(cancellation_rates_meal_plan)
+
+# Step 3: (Optional) Visualize the cancellation rates
+library(ggplot2)
+
+ggplot(cancellation_rates_meal_plan, aes(x = type_of_meal_plan, y = cancellation_rate)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  theme_minimal() +
+  ggtitle("Cancellation Rates by Meal Plan Type") +
+  xlab("Meal Plan Type") +
+  ylab("Cancellation Rate")
+```
 
