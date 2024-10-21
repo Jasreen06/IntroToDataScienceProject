@@ -183,22 +183,23 @@ hotel_data_clean <- hotel_data_clean %>%
   mutate(has_special_requests = ifelse(no_of_special_requests > 0, "Yes", "No"),
          is_cancelled = ifelse(booking_status == "Canceled", "Canceled", "Not_Canceled"))
 
-print(table(hotel_data_clean$has_special_requests))
-print(table(hotel_data_clean$is_cancelled))
-
 special_requests_table <- table(hotel_data_clean$has_special_requests, hotel_data_clean$is_cancelled)
 
 sum(special_requests_table) > 0
-  special_requests_test <- chisq.test(special_requests_table)
+special_requests_test <- chisq.test(special_requests_table)
 
-  special_requests_props <- prop.table(special_requests_table, margin = 1)
-
-  print("Contingency Table:")
+special_requests_props <- prop.table(special_requests_table, margin = 1)
+```
+**Contingency Table:**
+```{r}
 print(special_requests_table)
-
-print("Chi-Square Test Results:")
+```
+**Chi-Square Test Results:**
+```{r}
 print(special_requests_test)
+```
 
+```{r chi_plot1, error = TRUE}
 print(ggplot(hotel_data_clean, aes(x = has_special_requests, fill = is_cancelled)) +
   geom_bar(position = "fill") +
   labs(title = "Cancellation Rates by Special Requests",
@@ -222,13 +223,18 @@ previous_cancellations_table <- table(hotel_data_clean$has_previous_cancellation
 previous_cancellations_test <- chisq.test(previous_cancellations_table)
 
 previous_cancellations_props <- prop.table(previous_cancellations_table, margin = 1)
+```
 
-  print("Contingency Table:")
+**Contingency Table:**
+```{r}
 print(previous_cancellations_table)
-
-print("Chi-Square Test Results:")
+```
+**Chi-Square Test Results:**
+```{r}
 print(previous_cancellations_test)
+```
 
+```{r chi_plot2}
 print(ggplot(hotel_data_clean, aes(x = has_previous_cancellations, fill = is_cancelled)) +
   geom_bar(position = "fill") +
   labs(title = "Cancellation Rates by Previous Cancellations",
