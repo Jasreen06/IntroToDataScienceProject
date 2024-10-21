@@ -100,16 +100,20 @@ write.csv(hotel_data_clean,"INNHotelsGroup_min.csv", row.names = F)
 
 # **Exploratory Data Analysis (EDA)**
 
-## Summary Statistics for Numerical Columns
-
+## Summary Statistics
 ```{r}
-num_cols <- sapply(hotel_data_clean, is.numeric)
-print(summary(hotel_data_clean[ , num_cols]))
+hotel_data_clean$type_of_meal_plan <- as.factor(hotel_data_clean$type_of_meal_plan)
+hotel_data_clean$room_type_reserved <- as.factor(hotel_data_clean$room_type_reserved)
+hotel_data_clean$booking_status <- as.factor(hotel_data_clean$booking_status)
+hotel_data_clean$market_segment_type <- as.factor(hotel_data_clean$market_segment_type)
+hotel_data_clean$arrival_year <- as.factor(hotel_data_clean$arrival_year)
+hotel_data_clean$arrival_month <- as.factor(hotel_data_clean$arrival_month)
+summary(hotel_data_clean)
 ```
 
 **Observations:**
 
-The average price per room in the dataset is 103.4 euros, with a median of 99 euros, but prices can reach up to 540 euros, indicating high-priced outliers. Some entries even show an average price of zero, possibly reflecting promotional deals. Guests typically stay for two weekday nights and one weekend night, with the average number of weekday nights being 2.2 and weekend nights 0.81. Stays can extend to as many as 17 weekday nights. Most bookings involve two adults, and many guests do not bring children. Lead times vary significantly, with an average of 85 days, a median of 57, and some bookings made up to 443 days in advance, suggesting a right-skewed distribution. The data also shows sparse previous cancellations, with an average of just 0.02, and a maximum of 58. Bookings are spread over 2017 and 2018, peaking in August of 2018. Additionally, most guests do not make special requests, as the median is zero, although some make up to five requests per booking.
+The average price per room in the dataset is 103 euros, with a median of 99 euros, but prices can reach up to 540 euros, indicating high-priced outliers. Some entries even show an average price of zero, possibly reflecting promotional deals. Guests typically stay for two weekday nights and one weekend night, with the average number of weekday nights being 2.2 and weekend nights 0.81. Stays can extend to as many as 17 weekday nights. Most bookings involve two adults, and many guests do not bring children. Lead times vary significantly, with an average of 85 days, a median of 57, and some bookings made up to 443 days in advance, suggesting a right-skewed distribution. The data also shows sparse previous cancellations, with an average of just 0.02, and a maximum of 58. Bookings are spread over 2017 and 2018, peaking in october. Additionally, most guests do not make special requests, as the median is zero, although some make up to five requests per booking.
 
 ## **1. Distribution of Booking Status**
 ```{r plot1}
