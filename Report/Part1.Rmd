@@ -47,7 +47,7 @@ In this project, we aim to study the factors influencing hotel booking cancellat
 For this project, we have selected a hotel booking dataset containing over 36,000 records of bookings. **[INNHotelsGroup dataset]**(https://www.kaggle.com/datasets/mariyamalshatta/inn-hotels-group) from Kaggle. This dataset offers a comprehensive overview of hotel booking patterns, making it ideal for our analysis on cancellations and no-shows.
 
 ```{r import_dataset}
-hotel_data <- read.csv("../Dataset/INNHotelsGroup.csv")
+hotel_data <- read.csv("INNHotelsGroup.csv")
 ```
 
 This dataset contains `r nrow(hotel_data)` observations of `r ncol(hotel_data)` variables. Out of these observations, `r sum(is.na(hotel_data))` rows contain null values.
@@ -95,7 +95,7 @@ hotel_data_clean <- na.omit(hotel_data_clean)
 After cleaning, we are left with `r nrow(hotel_data_clean)` observations of `r ncol(hotel_data_clean)` variables.
 
 ```{r save_data}
-write.csv(hotel_data_clean,"../Dataset/INNHotelsGroup_min.csv", row.names = F)
+write.csv(hotel_data_clean,"INNHotelsGroup_min.csv", row.names = F)
 ```
 
 # **Exploratory Data Analysis (EDA)**
@@ -103,8 +103,8 @@ write.csv(hotel_data_clean,"../Dataset/INNHotelsGroup_min.csv", row.names = F)
 ## Summary Statistics for Numerical Columns
 
 ```{r}
-num_cols <- sapply(data, is.numeric)
-print(summary(data[ , num_cols]))
+num_cols <- sapply(hotel_data_clean, is.numeric)
+print(summary(hotel_data_clean[ , num_cols]))
 ```
 
 **Observations:**
@@ -113,9 +113,9 @@ The average price per room in the dataset is 103.4 euros, with a median of 99 eu
 
 ## **1. Distribution of Booking Status**
 ```{r plot1}
-ggplot(hotel_data_clean, aes(x = booking_status)) +
+print(ggplot(hotel_data_clean, aes(x = booking_status)) +
   geom_bar(fill = "lightblue") +
-  labs(title = "Booking Status Distribution", x = "Booking Status", y = "Count")
+  labs(title = "Booking Status Distribution", x = "Booking Status", y = "Count"))
 ```
 
 **Summary**\
@@ -123,9 +123,9 @@ The dataset contains 36,275 bookings, with 24,390 classified as “Not Canceled�
 
 ## **2. Analysis of Meal Plan Type**\
 ```{r plot2}
-ggplot(hotel_data_clean, aes(x = type_of_meal_plan, fill = booking_status)) +
+print(ggplot(hotel_data_clean, aes(x = type_of_meal_plan, fill = booking_status)) +
   geom_bar(position = "fill") +
-  labs(title = "Cancellation Rate by Meal Plan", x = "Meal Plan", y = "Proportion", fill = "Booking Status")
+  labs(title = "Cancellation Rate by Meal Plan", x = "Meal Plan", y = "Proportion", fill = "Booking Status"))
 ```
 
 **Summary** \ 
@@ -136,9 +136,9 @@ For the "Not Selected" category, there is a relatively high cancellation rate, s
 
 ## **3. Distribution of Room Types**\
 ```{r plot3}
-ggplot(hotel_data_clean, aes(x = room_type_reserved, fill = booking_status)) +
+print(ggplot(hotel_data_clean, aes(x = room_type_reserved, fill = booking_status)) +
   geom_bar(position = "fill") +
-  labs(title = "Cancellation Rate by Room Type", x = "Room Type", y = "Proportion", fill = "Booking Status")
+  labs(title = "Cancellation Rate by Room Type", x = "Room Type", y = "Proportion", fill = "Booking Status"))
 ```
 
 **Summary** \
@@ -148,10 +148,10 @@ For other room types, the rates are fairly similar, with around 60-70% of bookin
 
 ## **4. Barplot: Number of Special Requests** \
 ```{r plot4}
-ggplot(hotel_data_clean, aes(x = factor(no_of_special_requests))) +
+print(ggplot(hotel_data_clean, aes(x = factor(no_of_special_requests))) +
   geom_bar(fill = "orange") +
   labs(title = "Number of Special Requests", x = "Number of Special Requests", y = "Count") +
-  theme_minimal()
+  theme_minimal())
 ```
 
 **Summary** \ 
@@ -164,14 +164,14 @@ contingency_table <- table(hotel_data_clean$market_segment_type, hotel_data_clea
 plot_data <- as.data.frame(contingency_table)
 colnames(plot_data) <- c("Market_Segment", "Booking_Status", "Count")
 
-ggplot(plot_data, aes(x = Market_Segment, y = Count, fill = Booking_Status)) +
+print(ggplot(plot_data, aes(x = Market_Segment, y = Count, fill = Booking_Status)) +
   geom_bar(stat = "identity", position = "dodge") +
   theme_minimal() +
   labs(title = "Booking Status by Market Segment",
        x = "Market Segment",
        y = "Count",
        fill = "Booking Status") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)))
 ```
 
 # **Statistical Analysis** 
@@ -180,7 +180,7 @@ ggplot(plot_data, aes(x = Market_Segment, y = Count, fill = Booking_Status)) +
 **Null Hypothesis (H₀)**: There is no significant association between special requests and booking status.\
 **Alternative Hypothesis (H₁:)**There is significant association between special request and booking status.\
 
-```{r chi_sqaure_test1}
+```{r chi_sqaure_test1, error = TRUE}
 hotel_data_clean <- hotel_data_clean %>%
   mutate(has_special_requests = ifelse(no_of_special_requests > 0, "Yes", "No"),
          is_cancelled = ifelse(booking_status == "Canceled", "Canceled", "Not_Canceled"))
@@ -201,11 +201,11 @@ print(special_requests_table)
 print("Chi-Square Test Results:")
 print(special_requests_test)
 
-  ggplot(hotel_data_clean, aes(x = has_special_requests, fill = is_cancelled)) +
-    geom_bar(position = "fill") +
-    labs(title = "Cancellation Rates by Special Requests",
-         x = "Has Special Requests", y = "Proportion") +
-    theme_minimal()
+print(ggplot(hotel_data_clean, aes(x = has_special_requests, fill = is_cancelled)) +
+  geom_bar(position = "fill") +
+  labs(title = "Cancellation Rates by Special Requests",
+    x = "Has Special Requests", y = "Proportion") +
+  theme_minimal())
 ```
 
 The chi-square test's extremely low p-value (< 0.05) indicates strong evidence against the null hypothesis. We can reject the null hypothesis and conclude that there is a significant association between special requests and cancellation rates.
@@ -231,20 +231,20 @@ print(previous_cancellations_table)
 print("Chi-Square Test Results:")
 print(previous_cancellations_test)
 
-ggplot(hotel_data_clean, aes(x = has_previous_cancellations, fill = is_cancelled)) +
+print(ggplot(hotel_data_clean, aes(x = has_previous_cancellations, fill = is_cancelled)) +
   geom_bar(position = "fill") +
   labs(title = "Cancellation Rates by Previous Cancellations",
        x = "Has Previous Cancellations", y = "Proportion") +
-  theme_minimal()
+  theme_minimal())
 ```
 
 The chi-square test's extremely low p-value (< 0.05) indicates strong evidence against the null hypothesis. We can reject the null hypothesis and conclude that there is a significant association between having previous cancellations and the likelihood of canceling the current booking.
 
 Surprisingly, bookings from guests with previous cancellations have a much lower cancellation rate (4.73%) compared to those without previous cancellations (33.03%). This represents a substantial difference of about 28.3 percentage points.
 
-## **Correlation Matrix: Key Factors Influencing Cancellations**
-**Null Hypothesis (H₀):** There is no correlation between the selected factors (lead time, price, special requests, etc.) and booking cancellations.\
-**Alternative Hypothesis (H₁):** There is a significant correlation between one or more factors and booking cancellations.\
+## **3rd SMART Question**
+**Null Hypothesis (H₀):**\
+**Alternative Hypothesis (H₁):**\
 
 ```{r test3}
 
@@ -259,17 +259,35 @@ Surprisingly, bookings from guests with previous cancellations have a much lower
 ```
 
 ## **5th SMART Question**
-**Null Hypothesis (H₀):**\
-**Alternative Hypothesis (H₁):**\
+**Null Hypothesis (H₀):**: There is no significant relationship between lead time and booking status. This means that lead time has no predictive power or influence on whether a booking is canceled or not.
+**Alternative Hypothesis (H₁):**: There is a significant relationship between lead time and booking status. This implies that as lead time increases, it affects the likelihood of a booking being canceled or not.
 
-```{r test5}
+```{r test5, fig.width=10, fig.height=10}
+# Convert booking_status to a binary variable
+hotel_data_clean$booking_status_binary <- ifelse(hotel_data_clean$booking_status == "Canceled", 1, 0)
 
+
+# Function to remove columns with zero variance
+remove_zero_variance <- function(df) {
+  df[, sapply(df, function(col) sd(col, na.rm = TRUE) != 0)]
+}
+
+# Remove columns with zero variance
+data_filtered <- remove_zero_variance(select_if(hotel_data_clean, is.numeric))
+
+# Calculate the correlation matrix
+cor_data <- cor(data_filtered, use = "complete.obs")
+
+# Visualize the correlation matrix
+corrplot(cor_data, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Hotel Dataset", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
 ```
+
+
 
 # **Conclusion**
 
 1. This analysis suggests that a guest's previous cancellation history could be a reliable predictor of their future booking behavior. Hotels could use this information to refine their overbooking strategies, potentially allocating more flexible cancellation policies to first-time guests or those without a history of cancellations. Conversely, they might implement stricter policies or require deposits from guests with a history of cancellations to mitigate potential losses.
 
 2.Cancellation rate for bookings without special requests: 8545 / (8545 + 11232) ≈ 43.2%. Cancellation rate for bookings with special requests: 3340 / (3340 + 13158) ≈ 20.2%. There's a clear difference in cancellation rates, with bookings having special requests showing a significantly lower cancellation rate.
-
-
