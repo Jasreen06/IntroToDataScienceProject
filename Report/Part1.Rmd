@@ -47,7 +47,7 @@ In this project, we aim to study the factors influencing hotel booking cancellat
 For this project, we have selected a hotel booking dataset containing over 36,000 records of bookings. **[INNHotelsGroup dataset]**(https://www.kaggle.com/datasets/mariyamalshatta/inn-hotels-group) from Kaggle. This dataset offers a comprehensive overview of hotel booking patterns, making it ideal for our analysis on cancellations and no-shows.
 
 ```{r import_dataset}
-hotel_data <- read.csv("INNHotelsGroup.csv")
+hotel_data <- read.csv("../Dataset/INNHotelsGroup.csv")
 ```
 
 This dataset contains `r nrow(hotel_data)` observations of `r ncol(hotel_data)` variables. Out of these observations, `r sum(is.na(hotel_data))` rows contain null values.
