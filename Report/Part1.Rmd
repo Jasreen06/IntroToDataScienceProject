@@ -1,14 +1,17 @@
 ---
 title: 'DATS6101 Project 1: Exploring Hotel Booking Cancellations'
-author: 'Group 6'
+author: "Group 6 : Jasreen Kaur Mehta, Pranav Dhawan, Tycho Gormley"
 date: '`r Sys.Date()`'
 output:
   html_document:
-    code_folding: hide
+    code_folding: show
     number_sections: false
     toc: yes
     toc_depth: 3
     toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
 ---
 
 ```{r init, include=FALSE}
@@ -16,6 +19,7 @@ output:
 library(ezids)
 library(ggplot2)
 library(dplyr)
+library(corrplot)
 
 #Setup knitter options
 knitr::opts_chunk$set(warning = F, message = F)
@@ -32,7 +36,7 @@ In this project, we aim to study the factors influencing hotel booking cancellat
 
 ## **SMART Questions**
 
-**1.    **How much less frequently do customers who make special requests cancel from 2017 to 2018 than those who don't?\
+**1.    **Do customers who make special requests cancel their bookings less frequently than those who don’t?\
 **2.    **Are guests with no previous cancellations more likely to avoid canceling their current booking?\
 **3.    **What are the key factors that show the strongest correlation with booking cancellations?\
 **4.    **How do hotel cancellation rates change across different seasons (spring, fall, winter, summer, holidays, low season), and which factors (e.g., lead time, room type/) correlate most strongly with cancellations during each season?\
@@ -51,11 +55,31 @@ This dataset contains `r nrow(hotel_data)` observations of `r ncol(hotel_data)` 
 ```{r data_structure}
 str(hotel_data)
 ```
+**Data Dictionary**
 
-```{r data_unique_values}
-print(unique(hotel_data$no_of_special_requests))
-print(unique(hotel_data$booking_status))
-```
+* Booking_ID: unique identifier of each booking
+* no_of_adults: Number of adults
+* no_of_children: Number of Children
+* no_of_weekend_nights: Number of weekend nights (Saturday or Sunday) the guest stayed or booked to stay at the hotel
+* no_of_week_nights: Number of week nights (Monday to Friday) the guest stayed or booked to stay at the hotel
+* type_of_meal_plan: Type of meal plan booked by the customer:
+    * Not Selected – No meal plan selected
+    * Meal Plan 1 – Breakfast
+    * Meal Plan 2 – Half board (breakfast and one other meal)
+    * Meal Plan 3 – Full board (breakfast, lunch, and dinner)
+* required_car_parking_space: Does the customer require a car parking space? (0 - No, 1- Yes)
+* room_type_reserved: Type of room reserved by the customer. The values are ciphered (encoded) by INN Hotels.
+* lead_time: Number of days between the date of booking and the arrival date
+* arrival_year: Year of arrival date
+* arrival_month: Month of arrival date
+* arrival_date: Date of the month
+* market_segment_type: Market segment designation.
+* repeated_guest: Is the customer a repeated guest? (0 - No, 1- Yes)
+* no_of_previous_cancellations: Number of previous bookings that were canceled by the customer prior to the current booking
+* no_of_previous_bookings_not_canceled: Number of previous bookings not canceled by the customer prior to the current booking
+* avg_price_per_room: Average price per day of the reservation; prices of the rooms are dynamic. (in euros)
+* no_of_special_requests: Total number of special requests made by the customer (e.g. high floor, view from the room, etc)
+* booking_status: Flag indicating if the booking was canceled or not.
 
 ## **Cleaning The Dataset**
 
@@ -76,6 +100,17 @@ write.csv(hotel_data_clean,"../Dataset/INNHotelsGroup_min.csv", row.names = F)
 
 # **Exploratory Data Analysis (EDA)**
 
+## Summary Statistics for Numerical Columns
+
+```{r}
+num_cols <- sapply(data, is.numeric)
+print(summary(data[ , num_cols]))
+```
+
+**Observations:**
+
+The average price per room in the dataset is 103.4 euros, with a median of 99 euros, but prices can reach up to 540 euros, indicating high-priced outliers. Some entries even show an average price of zero, possibly reflecting promotional deals. Guests typically stay for two weekday nights and one weekend night, with the average number of weekday nights being 2.2 and weekend nights 0.81. Stays can extend to as many as 17 weekday nights. Most bookings involve two adults, and many guests do not bring children. Lead times vary significantly, with an average of 85 days, a median of 57, and some bookings made up to 443 days in advance, suggesting a right-skewed distribution. The data also shows sparse previous cancellations, with an average of just 0.02, and a maximum of 58. Bookings are spread over 2017 and 2018, peaking in August of 2018. Additionally, most guests do not make special requests, as the median is zero, although some make up to five requests per booking.
+
 ## **1. Distribution of Booking Status**
 ```{r plot1}
 ggplot(hotel_data_clean, aes(x = booking_status)) +
@@ -83,8 +118,8 @@ ggplot(hotel_data_clean, aes(x = booking_status)) +
   labs(title = "Booking Status Distribution", x = "Booking Status", y = "Count")
 ```
 
-**Summary**   \
-The number of non-canceled bookings is significantly higher than the number of canceled bookings. This indicates that most bookings in the dataset were not canceled.
+**Summary**\
+The dataset contains 36,275 bookings, with 24,390 classified as “Not Canceled” and 11,885 as “Canceled”. Approximately two-thirds of the bookings were completed, while the remaining one-third were canceled.\
 
 ## **2. Analysis of Meal Plan Type**\
 ```{r plot2}
@@ -120,7 +155,7 @@ ggplot(hotel_data_clean, aes(x = factor(no_of_special_requests))) +
 ```
 
 **Summary** \ 
-The bar chart shows that most hotel bookings have zero or one special request, with about 20,000 and 13,000 bookings, respectively. The number of bookings decreases sharply as the number of requests increases. Very few customers make more than two requests, indicating minimal specific demands from the majority.
+Most guests make no special requests, with a sharp decline as the number increases. A significant portion makes one request, while two or more requests are increasingly rare.
 
 ## **5. Plot: Market Segment vs Booking Status** \
 ```{r plot5}
@@ -139,19 +174,11 @@ ggplot(plot_data, aes(x = Market_Segment, y = Count, fill = Booking_Status)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-```{r}
-
-```
-
-**Summary** \ 
-
-
-
 # **Statistical Analysis** 
 
-## **1. Chi-Square Test: Special Requests vs. No Special Requests**
-**Null Hypothesis (H₀)**: There is no significant difference in the cancellation rates between customers who make special requests and those who do not.\
-**Alternative Hypothesis (H₁:)** Customers with special requests cancel less frequently than those without.\
+## **1. Do customers who make special requests cancel their bookings less frequently than those who don’t? : Chi-Square Test**
+**Null Hypothesis (H₀)**: There is no significant association between special requests and booking status.\
+**Alternative Hypothesis (H₁:)**There is significant association between special request and booking status.\
 
 ```{r chi_sqaure_test1}
 hotel_data_clean <- hotel_data_clean %>%
@@ -185,7 +212,7 @@ The chi-square test's extremely low p-value (< 0.05) indicates strong evidence a
 
 Bookings with special requests have a much lower cancellation rate (20.2%) compared to those without (43.2%). The data strongly suggests that customers who make special requests are more likely to follow through with their bookings and significantly less likely to cancel their bookings.
 
-## **2. Chi-Square Test: Previous Cancellations vs. Current Cancellation**
+## **2. Are guests with no previous cancellations more likely to avoid canceling their current booking? : Chi-Square Test**
 **Null Hypothesis (H₀):** There is no association between having previous cancellations and the likelihood of canceling the current booking.\
 **Alternative Hypothesis (H₁):** Guests with no previous cancellations are less likely to cancel their current booking.\
 
