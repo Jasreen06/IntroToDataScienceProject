@@ -30,9 +30,9 @@ options(scientific=T, digits = 3)
 
 ## **About The Project**
 
-In the hotel industry, effective management of bookings is crucial for optimizing revenue and ensuring operational efficiency. Hotels experience a variety of booking patterns, some of which include cancellations or no-shows. While some customers may cancel due to changing plans, others may not show up despite a confirmed reservation. To mitigate financial losses and maximize occupancy, it’s important for hotels to understand the underlying factors that contribute to these cancellations.\
+INN Hotels Group has a chain of hotels in Portugal, they are facing problems with the high number of booking cancellations. In the hotel industry, effective management of bookings is crucial for optimizing revenue and ensuring operational efficiency.\
 
-In this project, we aim to study the factors influencing hotel booking cancellations and no-shows while answering some SMART questions. By examining customer attributes such as room preferences, lead time (the number of days between the booking date and arrival date), meal plan choices, and past booking behavior, we will identify key patterns and trends. Additionally, we will analyze other variables such as special requests, arrival month and market segments.\
+Our main objective in this project is to analyze the dataset to find which factors have a high influence on booking cancellations while answering some SMART questions. By examining customer attributes such as room preferences, lead time, meal plan choices, and past booking behavior, we will identify key patterns and trends. Additionally, we will also analyze other variables such as special requests, arrival month and market segments.\
 
 ## **SMART Questions**
 
@@ -95,33 +95,31 @@ hotel_data_clean <- na.omit(hotel_data_clean)
 After cleaning, we are left with `r nrow(hotel_data_clean)` observations of `r ncol(hotel_data_clean)` variables.
 
 ```{r save_data}
-write.csv(hotel_data_clean,"INNHotelsGroup_min.csv", row.names = F)
+write.csv(hotel_data_clean,"../Dataset/INNHotelsGroup_min.csv", row.names = F)
 ```
 
 # **Exploratory Data Analysis (EDA)**
 
-## Summary Statistics for Numerical Columns
-
+## **1. Summary Statistics for Numerical Columns**\
 ```{r}
 num_cols <- sapply(hotel_data_clean, is.numeric)
 print(summary(hotel_data_clean[ , num_cols]))
 ```
 
-**Observations:**
+**Summary:**\
+The average price per room in the dataset is 103.4 euros, with a median of 99 euros, but prices can reach up to 540 euros, indicating high-priced outliers. Some entries even show an average price of zero, possibly reflecting promotional deals. Guests typically stay for two weekday nights and one weekend night, with the average number of weekday nights being 2.2 and weekend nights 0.81. Stays can extend to as many as 17 weekday nights. Most bookings involve two adults, and many guests do not bring children. Lead times vary significantly, with an average of 85 days, a median of 57, and some bookings made up to 443 days in advance, suggesting a right-skewed distribution. The data also shows sparse previous cancellations, with an average of just 0.02, and a maximum of 58. Bookings are spread over 2017 and 2018, peaking in August of 2018. Additionally, most guests do not make special requests, as the median is zero, although some make up to five requests per booking.\
 
-The average price per room in the dataset is 103.4 euros, with a median of 99 euros, but prices can reach up to 540 euros, indicating high-priced outliers. Some entries even show an average price of zero, possibly reflecting promotional deals. Guests typically stay for two weekday nights and one weekend night, with the average number of weekday nights being 2.2 and weekend nights 0.81. Stays can extend to as many as 17 weekday nights. Most bookings involve two adults, and many guests do not bring children. Lead times vary significantly, with an average of 85 days, a median of 57, and some bookings made up to 443 days in advance, suggesting a right-skewed distribution. The data also shows sparse previous cancellations, with an average of just 0.02, and a maximum of 58. Bookings are spread over 2017 and 2018, peaking in August of 2018. Additionally, most guests do not make special requests, as the median is zero, although some make up to five requests per booking.
-
-## **1. Distribution of Booking Status**
+## **2. Distribution of Booking Status**\
 ```{r plot1}
 print(ggplot(hotel_data_clean, aes(x = booking_status)) +
   geom_bar(fill = "lightblue") +
   labs(title = "Booking Status Distribution", x = "Booking Status", y = "Count"))
 ```
 
-**Summary**\
+**Summary** \
 The dataset contains 36,275 bookings, with 24,390 classified as “Not Canceled” and 11,885 as “Canceled”. Approximately two-thirds of the bookings were completed, while the remaining one-third were canceled.\
 
-## **2. Analysis of Meal Plan Type**\
+## **3. Analysis of Meal Plan Type** \
 ```{r plot2}
 print(ggplot(hotel_data_clean, aes(x = type_of_meal_plan, fill = booking_status)) +
   geom_bar(position = "fill") +
@@ -134,7 +132,7 @@ Meal Plan 2 has a lower cancellation rate, with cancellations and non-cancellati
 Meal Plan 3 shows the highest proportion of non-cancelled bookings compared to canceled ones, suggesting customers choosing this meal plan tend to cancel less frequently.
 For the "Not Selected" category, there is a relatively high cancellation rate, similar to Meal Plan 1.
 
-## **3. Distribution of Room Types**\
+## **4. Distribution of Room Types**\
 ```{r plot3}
 print(ggplot(hotel_data_clean, aes(x = room_type_reserved, fill = booking_status)) +
   geom_bar(position = "fill") +
@@ -146,7 +144,7 @@ Room Type 1 and Room Type 6 have the highest cancellation rates, with a large pr
 Room Type 7 stands out as having the highest proportion of non-cancelled bookings, suggesting it may be a preferred or better-secured type of room.
 For other room types, the rates are fairly similar, with around 60-70% of bookings not canceled, except for Room Type 1 which has more cancellations.
 
-## **4. Barplot: Number of Special Requests** \
+## **5. Barplot: Number of Special Requests** \
 ```{r plot4}
 print(ggplot(hotel_data_clean, aes(x = factor(no_of_special_requests))) +
   geom_bar(fill = "orange") +
@@ -178,7 +176,7 @@ print(ggplot(plot_data, aes(x = Market_Segment, y = Count, fill = Booking_Status
 
 ## **1. Do customers who make special requests cancel their bookings less frequently than those who don’t? : Chi-Square Test**
 **Null Hypothesis (H₀)**: There is no significant association between special requests and booking status.\
-**Alternative Hypothesis (H₁:)**There is significant association between special request and booking status.\
+**Alternative Hypothesis (H₁:)**There is significant association between special requests and booking status.\
 
 ```{r chi_sqaure_test1, error = TRUE}
 hotel_data_clean <- hotel_data_clean %>%
@@ -208,7 +206,7 @@ print(ggplot(hotel_data_clean, aes(x = has_special_requests, fill = is_cancelled
   theme_minimal())
 ```
 
-The chi-square test's extremely low p-value (< 0.05) indicates strong evidence against the null hypothesis. We can reject the null hypothesis and conclude that there is a significant association between special requests and cancellation rates.
+The chi-square test result shows a very small p-value which is much less than the typical significance level of 0.05. Due to this we reject the null hypothesis (H₀) and accept the alternative hypothesis (H₁).
 
 Bookings with special requests have a much lower cancellation rate (20.2%) compared to those without (43.2%). The data strongly suggests that customers who make special requests are more likely to follow through with their bookings and significantly less likely to cancel their bookings.
 
@@ -238,7 +236,7 @@ print(ggplot(hotel_data_clean, aes(x = has_previous_cancellations, fill = is_can
   theme_minimal())
 ```
 
-The chi-square test's extremely low p-value (< 0.05) indicates strong evidence against the null hypothesis. We can reject the null hypothesis and conclude that there is a significant association between having previous cancellations and the likelihood of canceling the current booking.
+Due to the p-value being below the significance threshold of 0.05, we reject the null hypothesis. This provides strong statistical evidence to support the alternative hypothesis that guests with previous cancellations are less likely to cancel their current booking. 
 
 Surprisingly, bookings from guests with previous cancellations have a much lower cancellation rate (4.73%) compared to those without previous cancellations (33.03%). This represents a substantial difference of about 28.3 percentage points.
 
