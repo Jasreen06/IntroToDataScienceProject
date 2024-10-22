@@ -58,6 +58,7 @@ To improve the current analysis, the inclusion of demographic data such as custo
 **1.    **Do customers who make special requests cancel their bookings less frequently than those who don’t?\
 **2.    **Are guests with no previous cancellations more likely to avoid canceling their current booking?\
 **3.    **how does the booking status varies upon meal plan, room type, lead time and average room price ?\
+**3.    **How does the booking status varies upon meal plan, room type, lead time and average room price ?\
 **4.    **What are the key factors that show the strongest correlation with booking cancellations?\
 **5.    **How do hotel cancellation rates change across different seasons (spring, fall, winter, summer, holidays, low season), and which factors (e.g., lead time, room type/) correlate most strongly with cancellations during each season?\
 
@@ -65,6 +66,7 @@ To improve the current analysis, the inclusion of demographic data such as custo
 ## **About The Dataset**
 
 For this project, we have selected a hotel booking dataset containing over 36,000 records of bookings. **[INNHotelsGroup dataset]**(https://www.kaggle.com/datasets/mariyamalshatta/inn-hotels-group) from Kaggle. This dataset offers a comprehensive overview of hotel booking patterns, making it ideal for our analysis on cancellations and no-shows.
+For this project, we have selected a hotel booking dataset containing over 36,000 records of bookings. [INNHotelsGroup dataset](https://www.kaggle.com/datasets/mariyamalshatta/inn-hotels-group) from Kaggle. This dataset offers a comprehensive overview of hotel booking patterns, making it ideal for our analysis on cancellations and no-shows.
 
 ```{r import_dataset}
 hotel_data <- read.csv("../Dataset/INNHotelsGroup.csv")
@@ -311,6 +313,7 @@ Due to the p-value being below the significance threshold of 0.05, we reject the
 Surprisingly, bookings from guests with previous cancellations have a much lower cancellation rate (4.73%) compared to those without previous cancellations (33.03%). This represents a substantial difference of about 28.3 percentage points.
 
 ## **3. how does the booking status varies upon meal plan, room type, lead time and average room price ?**
+## **3. How does the booking status varies upon meal plan, room type, lead time and average room price ?**
 ### **3.1 Does booking status vary upon lead time?**
 **Null Hypothesis (H₀): There is no association between booking status and type of meal plan.**\
 **Alternative Hypothesis (H₁): There is an association between booking status and type of meal plan.**\
