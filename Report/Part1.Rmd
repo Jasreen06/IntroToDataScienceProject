@@ -39,7 +39,7 @@ The dataset used in this project, sourced from Kaggle, contains detailed informa
 
 A key strength of this dataset is its comprehensive scope. It includes not only basic booking details but also behavioral indicators like special requests, allowing for a deeper exploration of how different types of customers behave. This enables us to evaluate factors beyond the usual booking characteristics, such as how the length of stay or lead time influences cancellation likelihood.
 
-It's worth keeping in mind several limitations that could influence the results of the analysis. First, this dataset lacks demographic data like specific age groups, gender, or income, which are often critical in understanding customer behavior patterns. Without this information, it becomes more difficult to explore how demographic factors could correlate with cancellations. The dataset also only contains bookings from a single year (2018), which limits the ability to understand longer-term trends or assess the impact of other external factors that might have fluctuated across different years, such as economic upturns/downturns, the Covid-19 pandemic, or general industry shifts.
+It's worth keeping in mind several limitations that could influence the results of the analysis. First, this dataset lacks demographic data like specific age groups, gender, or income, which are often critical in understanding customer behavior patterns. Without this information, it becomes more difficult to explore how demographic factors could correlate with cancellations. The dataset also only contains bookings from a 2017 to 2018, which limits the ability to understand longer-term trends or assess the impact of other external factors that might have fluctuated across different years, such as economic upturns/downturns, the Covid-19 pandemic, or general industry shifts.
 
 The dataset source does not explicitly state how the data was gathered, but it was likely obtained from a "hotel reservation system" or HRS. This system is designed to automate the booking process, manage room availability, and handle customer data, including booking status, lead time, room type, special requests, and much more. The data is typically stored in the hotel's "Property Management System" or PMS, which centralizes information from various booking channels such as the hotel's websitem third party platforms (like Booking.com), and over-the-phone bookings. The PMS ensures that reservation data is synchronized across platforms and stored securely for retrieval during check-in and check-out.(1) Through these systems, hotels reduce human error and increase efficiency, although missing data or occasional discrepancies may still occur due to system errors/limitations, or other external factors.
 
@@ -177,7 +177,7 @@ print(ggplot(hotel_data_clean, aes(x = factor(no_of_special_requests))) +
   theme_minimal())
 ```
 
-**Summary** \ 
+**Summary** \
 Most guests make no special requests, with a sharp decline as the number increases. A significant portion makes one request, while two or more requests are increasingly rare.
 
 ## **5. Plot: Market Segment vs Booking Status** \
@@ -197,21 +197,42 @@ print(ggplot(plot_data, aes(x = Market_Segment, y = Count, fill = Booking_Status
   theme(axis.text.x = element_text(angle = 45, hjust = 1)))
 ```
 
+**Summary** \
+Online market segment have the highest cancellation count, with a large proportion of canceled bookings of 8475.
+Offline segment has a cancellation count of 3253
+For other market segment, the cancellation rates are too less.
+
 ## **6. Histogram: Lead_time** \
 ```{r plot6}
-ggplot(hotel_data_clean, aes(x = lead_time)) + 
-  geom_histogram(binwidth = 30, fill = "blue", color = "black") + 
-  theme_minimal() + 
-  ggtitle("Distribution of Lead Time")
+ggplot(hotel_data_clean, aes(x = lead_time, fill = booking_status)) +
+  geom_histogram(binwidth = 10, position = "dodge") +
+  labs(
+    title = "Lead Time vs Booking Status",
+    x = "Lead Time (Days)",
+    y = "Number of Bookings",
+    fill = "Booking Status"
+  ) +
+  theme_minimal()
 ```
+
+**Summary** \
+Here we can see that the booking with short lead times are less cancelled and as the lead time increases there are more booking cancellations. Also, we can see more cancellation happening between lead time form 100-200.
 
 ## **7. Boxplot: avg_price_per_room** \
 ```{r plot7}
-ggplot(hotel_data_clean, aes(y = avg_price_per_room)) + 
-  geom_boxplot(fill = "orange") + 
-  theme_minimal() + 
-  ggtitle("Boxplot of Average Price per Room")
+ggplot(hotel_data_clean, aes(x = booking_status, y = avg_price_per_room, fill = booking_status)) +
+  geom_boxplot() +
+  labs(
+    title = "Average Room Price vs Booking Status",
+    x = "Booking Status",
+    y = "Average Room Price"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
 ```
+
+**Summary** \
+The booking with cancelled status has higher median average room price value compared to non-cancelled booking status.This might mean that the booking with her average room price have more chances to get cancelled.
 
 # **Statistical Analysis** 
 
@@ -248,6 +269,7 @@ print(ggplot(hotel_data_clean, aes(x = has_special_requests, fill = is_cancelled
   theme_minimal())
 ```
 
+**Summary:**\
 The chi-square test result shows a very small p-value which is much less than the typical significance level of 0.05. Due to this we reject the null hypothesis (H₀) and accept the alternative hypothesis (H₁).
 
 Bookings with special requests have a much lower cancellation rate (20.2%) compared to those without (43.2%). The data strongly suggests that customers who make special requests are more likely to follow through with their bookings and significantly less likely to cancel their bookings.
@@ -283,6 +305,7 @@ print(ggplot(hotel_data_clean, aes(x = has_previous_cancellations, fill = is_can
   theme_minimal())
 ```
 
+**Summary:**\
 Due to the p-value being below the significance threshold of 0.05, we reject the null hypothesis. This provides strong statistical evidence to support the alternative hypothesis that guests with previous cancellations are less likely to cancel their current booking. 
 
 Surprisingly, bookings from guests with previous cancellations have a much lower cancellation rate (4.73%) compared to those without previous cancellations (33.03%). This represents a substantial difference of about 28.3 percentage points.
@@ -305,6 +328,7 @@ ttestlead_time <- t.test(df_canceled$lead_time, df_not_canceled$lead_time,
 ttestlead_time
 ```
 
+**Summary:**\
 The t-test analysis reveals a significant difference in lead times between canceled and non-canceled bookings. On average, bookings that were canceled had a lead time of 139.2 days, while non-canceled bookings had a much shorter average lead time of 58.9 days. This difference is highly statistically significant (p-value < 0.05), suggesting that guests with longer lead times are more prone to cancel their reservations.
 
 ### **3.2 Does booking status vary upon Average Room Price?**
@@ -330,6 +354,7 @@ ttest_avg_price_per_room <- t.test(
 print(ttest_avg_price_per_room)
 ```
 
+**Summary:**\
 With extremely small p-value indicates a statistically significant difference between the average room prices for canceled and non-canceled bookings.The bookings with higher average room prices are more likely to be canceled compared to those with lower prices. Specifically, the average room price for canceled bookings is approximately 10.7 units higher than for non-canceled bookings.
 
 ### **3.3 Does booking status vary upon Meal Plan Type?**
@@ -347,6 +372,7 @@ chi_test_result <- chisq.test(contingency_table)
 print(chi_test_result)
 ```
 
+**Summary:**\
 The Chi-squared test suggests that meal plan type significantly affects whether a booking is canceled or not. The p-value is far below the standard threshold (0.05), meaning the differences observed between meal plans in terms of cancellation rates are highly unlikely to be due to chance. And as seen in EDA, the meal plan 1 has the highest cancellation rate.
 
 ### **3.4 Does booking status vary upon Room Type?**
@@ -365,6 +391,8 @@ chi_test_result <- chisq.test(contingency_table)
 # Display the result of the test
 print(chi_test_result)
 ```
+
+**Summary:**\
 The statistical analysis shows a significant relationship between the room type and the likelihood of booking cancellation. This insight suggests that certain room types are more prone to cancellations than others. And as we have seen in EDA that Room 1 and Room 6 has the highest cancellation rates, so they are more prone to cancellation.
 
 ## **4. What are the key factors that show the strongest correlation with booking cancellations?**
@@ -390,6 +418,7 @@ corrplot(cor_data, method = "color", addCoef.col = "black",
          tl.cex = 0.8, mar = c(1, 1, 2, 1))
 ```
 
+**Summary:**\
 The correlation matrix for the entire dataset reveals several key insights regarding factors associated with booking cancellations. Lead time shows the strongest positive correlation with cancellations (0.44), indicating that bookings made further in advance are more likely to be canceled. This makes sense, since customers have more time to change their plans or reconsider their bookings when the time between reservation and stay is longer.
 The number of special requests has a negative correlation (-0.25) with cancellations, implying that customers who make more personalized arrangements, such as requesting specific room types or amenities, are generally more committed to their bookings and less likely to cancel.
 The average price per room shows a weak positive correlation (0.14), suggesting that higher-priced bookings are slightly more prone to cancellation, although this relationship is not very strong. It's possible that the higher financial commitment associated with more expensive rooms leads some customers to reconsider their bookings. Meanwhile, being a repeated guest has a small negative correlation (-0.11) with cancellations, indicating that loyal customers are slightly less likely to cancel their bookings.
