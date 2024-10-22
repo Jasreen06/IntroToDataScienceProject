@@ -172,13 +172,29 @@ print(ggplot(plot_data, aes(x = Market_Segment, y = Count, fill = Booking_Status
   theme(axis.text.x = element_text(angle = 45, hjust = 1)))
 ```
 
+## **6. Histogram: Lead_time** \
+```{r plot6}
+ggplot(hotel_data_clean, aes(x = lead_time)) + 
+  geom_histogram(binwidth = 30, fill = "blue", color = "black") + 
+  theme_minimal() + 
+  ggtitle("Distribution of Lead Time")
+```
+
+## **7. Boxplot: avg_price_per_room** \
+```{r plot7}
+ggplot(hotel_data_clean, aes(y = avg_price_per_room)) + 
+  geom_boxplot(fill = "orange") + 
+  theme_minimal() + 
+  ggtitle("Boxplot of Average Price per Room")
+```
+
 # **Statistical Analysis** 
 
 ## **1. Do customers who make special requests cancel their bookings less frequently than those who don’t? : Chi-Square Test**
 **Null Hypothesis (H₀)**: There is no significant association between special requests and booking status.\
 **Alternative Hypothesis (H₁:)**There is significant association between special requests and booking status.\
 
-```{r chi_sqaure_test1, error = TRUE}
+```{r chi_sqaure_test1}
 hotel_data_clean <- hotel_data_clean %>%
   mutate(has_special_requests = ifelse(no_of_special_requests > 0, "Yes", "No"),
          is_cancelled = ifelse(booking_status == "Canceled", "Canceled", "Not_Canceled"))
@@ -191,11 +207,11 @@ special_requests_test <- chisq.test(special_requests_table)
 special_requests_props <- prop.table(special_requests_table, margin = 1)
 ```
 **Contingency Table:**
-```{r}
+```{r contigency_table_1}
 print(special_requests_table)
 ```
 **Chi-Square Test Results:**
-```{r}
+```{r chi_result1}
 print(special_requests_test)
 ```
 
@@ -226,11 +242,11 @@ previous_cancellations_props <- prop.table(previous_cancellations_table, margin 
 ```
 
 **Contingency Table:**
-```{r}
+```{r contigency_table_2}
 print(previous_cancellations_table)
 ```
 **Chi-Square Test Results:**
-```{r}
+```{r chi_result2}
 print(previous_cancellations_test)
 ```
 
@@ -246,30 +262,11 @@ Due to the p-value being below the significance threshold of 0.05, we reject the
 
 Surprisingly, bookings from guests with previous cancellations have a much lower cancellation rate (4.73%) compared to those without previous cancellations (33.03%). This represents a substantial difference of about 28.3 percentage points.
 
-## **3rd SMART Question**
-**Null Hypothesis (H₀):**\
-**Alternative Hypothesis (H₁):**\
+## **3. How do hotel cancellation rates change across different seasons (spring, fall, winter, summer, holidays, low season), and which factors (e.g., lead time, room type/) correlate most strongly with cancellations during each season? : Correlation Analysis**
 
-```{r test3}
-
-```
-
-## **4th SMART Question**
-**Null Hypothesis (H₀):**\
-**Alternative Hypothesis (H₁):**\
-
-```{r test4}
-
-```
-
-## **5th SMART Question**
-**Null Hypothesis (H₀):**: There is no significant relationship between lead time and booking status. This means that lead time has no predictive power or influence on whether a booking is canceled or not.
-**Alternative Hypothesis (H₁):**: There is a significant relationship between lead time and booking status. This implies that as lead time increases, it affects the likelihood of a booking being canceled or not.
-
-```{r test5, fig.width=10, fig.height=10}
+```{r correlation, fig.width=15, fig.height=10}
 # Convert booking_status to a binary variable
 hotel_data_clean$booking_status_binary <- ifelse(hotel_data_clean$booking_status == "Canceled", 1, 0)
-
 
 # Function to remove columns with zero variance
 remove_zero_variance <- function(df) {
@@ -284,11 +281,174 @@ cor_data <- cor(data_filtered, use = "complete.obs")
 
 # Visualize the correlation matrix
 corrplot(cor_data, method = "color", addCoef.col = "black", 
-         title = "Correlation Matrix for Hotel Dataset", number.cex = 1, 
+         title = "Correlation Matrix for Entire Dataset", number.cex = 1, 
          tl.cex = 0.8, mar = c(1, 1, 2, 1))
 ```
 
+The correlation analysis reveals key insights into factors linked to booking cancellations. Lead time has the strongest positive correlation (0.44), indicating that bookings made further in advance are more likely to be canceled. The number of special requests shows a negative correlation (-0.25), suggesting that personalized arrangements reduce cancellation likelihood. Average price per room has a weak positive correlation (0.14), implying that higher-priced bookings may be slightly more prone to cancellations. Repeated guests are slightly less likely to cancel (-0.11). Factors like the number of adults, children, and length of stay show minimal impact. 
 
+Seasonal correlation analysis was conducted to explore how booking behavior varies across spring, summer, fall, and winter. Understanding seasonal patterns in lead time, pricing, and cancellation rates can help customize strategies to reduce cancellations throughout the year. Overall, lead time and customer commitment stand out as key determinants of cancellations.
+
+### **Seasonality Analysis:**
+```{r define_season}
+# Define seasons based on arrival month
+hotel_data_clean$season <- case_when(
+  hotel_data_clean$arrival_month %in% c(3, 4, 5) ~ "Spring",
+  hotel_data_clean$arrival_month %in% c(6, 7, 8) ~ "Summer",
+  hotel_data_clean$arrival_month %in% c(9, 10, 11) ~ "Fall",
+  hotel_data_clean$arrival_month %in% c(12, 1, 2) ~ "Winter",
+  TRUE ~ "Unknown"
+)
+# Convert booking_status to a binary variable
+hotel_data_clean$booking_status_binary <- ifelse(hotel_data_clean$booking_status == "Canceled", 1, 0)
+```
+
+### **Creating subsets for each season:**
+```{r subset_creation}
+# Create subsets for each season
+spring_data <- subset(hotel_data_clean, season == "Spring")
+summer_data <- subset(hotel_data_clean, season == "Summer")
+fall_data <- subset(hotel_data_clean, season == "Fall")
+winter_data <- subset(hotel_data_clean, season == "Winter")
+```
+
+### **Remove columns with zero variance:**
+```{r remove_column}
+# Function to remove columns with zero variance
+remove_zero_variance <- function(df) {
+  df[, sapply(df, function(col) sd(col, na.rm = TRUE) != 0)]
+}
+
+# Remove zero variance columns for each season
+spring_data_filtered <- remove_zero_variance(select_if(spring_data, is.numeric))
+summer_data_filtered <- remove_zero_variance(select_if(summer_data, is.numeric))
+fall_data_filtered <- remove_zero_variance(select_if(fall_data, is.numeric))
+winter_data_filtered <- remove_zero_variance(select_if(winter_data, is.numeric))
+```
+
+### **Calculate correlation matrices:**
+```{r seasonal_correlation, fig.width=15, fig.height=10}
+# Calculate and visualize correlation for Spring
+cor_spring <- cor(spring_data_filtered, use = "complete.obs")
+corrplot(cor_spring, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Spring", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
+
+# Calculate and visualize correlation for Summer
+cor_summer <- cor(summer_data_filtered, use = "complete.obs")
+corrplot(cor_summer, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Summer", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
+
+# Calculate and visualize correlation for Fall
+cor_fall <- cor(fall_data_filtered, use = "complete.obs")
+corrplot(cor_fall, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Fall", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
+
+# Calculate and visualize correlation for Winter
+cor_winter <- cor(winter_data_filtered, use = "complete.obs")
+corrplot(cor_winter, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Winter", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
+```
+
+**Fall Correlation Matrix:**\
+The strongest positive correlation with booking status (0.54) is lead time, suggesting that as the lead time increases, there is a higher chance of the booking being canceled. This makes sense, as bookings made far in advance may have a higher likelihood of being reconsidered or cancelled.\
+Number of special requests has a slight negative correlation with booking status (-0.23), indicating that bookings with more special requests tend to have a lower likelihood of cancellation.\
+
+**Summer Correlation Matrix:**\
+Lead time continues to show a strong positive correlation (0.43) with booking status, compared to other variables, meaning that longer lead times are associated with cancellations during the summer as well.\
+Number of special requests shows a moderate negative correlation (-0.30), reinforcing the idea that bookings with special requests are less likely to be cancelled.\
+Average price per room has a weak positive correlation (0.22), suggesting that higher-priced rooms might be slightly more likely to be cancelled in the summer.\
+
+**Spring Correlation Matrix:**\
+The positive correlation with lead time remains somewhat significant at 0.29, consistent with the previous seasons. Longer lead times are associated with a higher likelihood of cancellation.\
+Special requests have the strongest negative correlation (-0.36) in the spring, indicating that bookings with more special requests are much less likely to be canceled during this season.\
+Average price per room shows a small positive correlation (0.13) with booking status, indicating a slight tendency for higher-priced bookings to be cancelled.\
+
+**Winter Correlation Matrix:**\
+Lead time remains a positive trending factor, with a correlation of 0.24. Longer lead times during the winter continue to be associated with higher cancellation rates.\
+The number of special requests has a negative correlation (-0.14), suggesting that special requests still reduce the likelihood of cancellations in the winter, although the effect is less pronounced compared to other seasons.\
+Average price per room has a slightly stronger positive correlation (0.36), indicating that higher-priced rooms may have a higher chance of being cancelled during the winter season.\
+
+## **4. What are the differences in cancellation rates based on meal plan type, lead time, and market segment, and what are the 95% confidence intervals for these rates?**
+
+### **4.1 Does booking status vary upon Meal Plan Type?**
+**Null Hypothesis (H₀): There is no significant difference in cancellation rates based on the type of meal plan.**\
+**Alternative Hypothesis (H₁): There is a significant difference in cancellation rates based on the type of meal plan.**\
+
+```{r ques4_1}
+hotel_data_clean$type_of_meal_plan <- as.factor(hotel_data_clean$type_of_meal_plan)
+hotel_data_clean$booking_status <- as.factor(hotel_data_clean$booking_status)
+
+contingency_table <- table(hotel_data_clean$type_of_meal_plan, hotel_data_clean$booking_status)
+
+chi_test_result <- chisq.test(contingency_table)
+
+print(chi_test_result)
+```
+
+### **4.2 Does booking status vary upon lead time?**
+**Null Hypothesis (H₀): There is no association between booking status and type of meal plan.**\
+**Alternative Hypothesis (H₁): There is an association between booking status and type of meal plan.**\
+```{r}
+hotel_data_clean$canceled <- ifelse(hotel_data_clean$booking_status == "Canceled", 1, 0)
+
+# Subsetting the data for customers who canceled
+df_canceled <- subset(hotel_data_clean, canceled == 1)
+
+# Subsetting the data for customers who did not cancel
+df_not_canceled <- subset(hotel_data_clean, canceled == 0)
+
+ttestlead_time <- t.test(df_canceled$lead_time, df_not_canceled$lead_time, 
+                       alternative = "two.sided", conf.level = 0.95)
+ttestlead_time
+```
+
+### **4.3 Does booking status vary upon Average Room Price?**
+**Null Hypothesis (H₀): There is no significant difference in cancellation rates based on the Average Room Price.**\
+**Alternative Hypothesis (H₁): There is a significant difference in cancellation rates based on the Average Room Price.**\
+```{r}
+# Creating a binary variable for cancellation
+hotel_data_clean$canceled <- ifelse(hotel_data_clean$booking_status == "Canceled", 1, 0)
+
+# Subsetting the data for customers who canceled
+df_canceled <- subset(hotel_data_clean, canceled == 1)
+
+# Subsetting the data for customers who did not cancel
+df_not_canceled <- subset(hotel_data_clean, canceled == 0)
+
+# Performing a t-test to compare average price per room between those who canceled and those who didn't
+ttest_avg_price_per_room <- t.test(
+  df_canceled$avg_price_per_room,
+  df_not_canceled$avg_price_per_room,
+  alternative = "two.sided",
+  conf.level = 0.95
+)
+
+# Function to interpret the t-test results
+interpret_ttestavg_price_per_room <- function(ttest_result) {
+  p_value <- ttest_result$p.value  # Extract the p-value from the t-test result
+  
+  # Print the test summary
+  print(ttest_result)
+  
+  # Interpret based on the p-value threshold (commonly set at 0.05)
+  if (p_value < 0.05) {
+    cat("Conclusion:\n")
+    cat("There is a statistically significant difference in the average price per room between customers who canceled and those who did not.\n")
+    cat("The p-value is less than 0.05, meaning the observed difference in means is unlikely to have occurred by chance.\n")
+  } else {
+    cat("Conclusion:\n")
+    cat("There is no statistically significant difference in the average price per room between customers who canceled and those who did not.\n")
+    cat("The p-value is greater than 0.05, so we fail to reject the null hypothesis that the difference in means is zero.\n")
+  }
+}
+
+# Call the function with the t-test result
+interpret_ttestavg_price_per_room(ttest_avg_price_per_room)
+```
 
 # **Conclusion**
 
