@@ -348,7 +348,7 @@ print(chi_test_result)
 ```
 The statistical analysis shows a significant relationship between the room type and the likelihood of booking cancellation. This insight suggests that certain room types are more prone to cancellations than others. And as we have seen in EDA that Room 1 and Room 6 has the highest cancellation rates, so they are more prone to cancellation.
 
-## **4. How do hotel cancellation rates change across different seasons (spring, fall, winter, summer, holidays, low season), and which factors (e.g., lead time, room type/) correlate most strongly with cancellations during each season?**
+## **4. What are the key factors that show the strongest correlation with booking cancellations?**
 
 ```{r correlation, fig.width=15, fig.height=10}
 # Convert booking_status to a binary variable
@@ -376,6 +376,8 @@ The number of special requests has a negative correlation (-0.25) with cancellat
 The average price per room shows a weak positive correlation (0.14), suggesting that higher-priced bookings are slightly more prone to cancellation, although this relationship is not very strong. It's possible that the higher financial commitment associated with more expensive rooms leads some customers to reconsider their bookings. Meanwhile, being a repeated guest has a small negative correlation (-0.11) with cancellations, indicating that loyal customers are slightly less likely to cancel their bookings.
 Interestingly, factors such as the number of adults, children, weekend nights, and week nights show little to no correlation with cancellations, suggesting that the composition of the travel party and the length of stay do not significantly impact the likelihood of a booking being canceled.
 In summary, lead time stands out as the most significant predictor of cancellations, while customer loyalty factors such as number of special requests, and being a repeated guest reduce the likelihood of cancellations. Although price plays a role, it is not a major determinant of cancellation behavior. 
+
+## **5. How do hotel cancellation rates change across different seasons (spring, fall, winter, summer, holidays, low season), and which factors (e.g., lead time, room type/) correlate most strongly with cancellations during each season?**
 
 In addition to analyzing the overall correlations in the dataset, we decided to perform a seasonality correlation analysis to explore how booking behavior might vary across different times of the year. Since factors like lead time, pricing, and cancellation rates can fluctuate with seasonal trends, understanding how these relationships change across spring, summer, fall, and winter could provide deeper insights into customer behavior and help tailor strategies to minimize cancellations based on seasonal patterns.
 
