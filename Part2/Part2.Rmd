@@ -1,0 +1,101 @@
+---
+title: 'DATS6101 Project 2: Exploring Hotel Booking Cancellations'
+author: "Pranav Dhawan"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    code_folding: show
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r init, include=FALSE}
+#Import required libraries
+library(ezids)
+library(tidyverse)  
+library(caret)     
+library(glmnet) 
+
+#Setup knitter options
+knitr::opts_chunk$set(warning = F, message = F)
+options(scientific=T, digits = 3)
+```
+
+```{r import_dataset}
+hotel_data <- read.csv("C:/Users/dhawa/Documents/IntroToDataScienceProject/Dataset/INNHotelsGroup_min.csv")
+``` 
+
+```{r data_structure}
+str(hotel_data)
+```
+
+```{r label_encoding}
+hotel_data$type_of_meal_plan <- as.numeric(factor(hotel_data$type_of_meal_plan))
+hotel_data$room_type_reserved <- as.numeric(factor(hotel_data$room_type_reserved))
+hotel_data$market_segment_type <- as.numeric(factor(hotel_data$market_segment_type))
+hotel_data$booking_status <- as.numeric(factor(hotel_data$booking_status)) 
+```
+
+
+```{r data_preprocessing}
+hotel_data <- hotel_data %>%
+  mutate(
+    total_nights = no_of_weekend_nights + no_of_week_nights
+  )
+```
+
+```{r}
+columns_to_drop <- c(
+  "no_of_adults",
+  "no_of_children",
+  "no_of_weekend_nights",
+  "no_of_week_nights",
+  "required_car_parking_space",
+  "no_of_previous_cancellations",
+  "repeated_guest"
+)
+
+hotel_data_min <- hotel_data[, !(names(hotel_data) %in% columns_to_drop)]
+head(hotel_data_min)
+```
+
+
+```{r}
+str(hotel_data_min)
+```
+
+ 
+# 1. Logistic Regression: Factors Influencing Cancellation
+
+```{r}
+cancellation_model <- glm(
+  booking_canceled ~ 
+    type_of_meal_plan + 
+    room_type_reserved + 
+    lead_time + 
+    avg_price_per_room + 
+    market_segment_type + 
+    no_of_special_requests,
+  data = hotel_data, 
+  family = binomial()
+)
+
+# Summary of cancellation factors
+summary_cancellation <- summary(cancellation_model)
+print(summary_cancellation)
+```
+
+
+# **Introduction**
+
+
+# **Conclusion**
+
+
+
+
