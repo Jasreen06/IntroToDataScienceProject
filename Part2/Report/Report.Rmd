@@ -1,7 +1,7 @@
 ---
-title: "Project 2: Classifying NFL players and predicting their longevity"
-author: "Group 4, Section 11"
-date: "`r Sys.Date()`"
+title: 'DATS6101 Project 2: Exploring Hotel Booking Cancellations'
+author: "Group 6 : Jasreen Kaur Mehta, Pranav Dhawan, Tycho Gormley"
+date: '`r Sys.Date()`'
 output:
   html_document:
     code_folding: hide
@@ -27,3 +27,86 @@ library(patchwork)
 knitr::opts_chunk$set(warning = F, message = F)
 options(scientific=T, digits = 3)
 ```
+
+```{r import_dataset}
+hotel_data <- read.csv("C:/Users/dhawa/Documents/IntroToDataScienceProject/Dataset/INNHotelsGroup_min.csv")
+``` 
+
+```{r data_structure}
+str(hotel_data)
+```
+
+# **Introduction**
+## **Part 1 Recap**
+In our Part 1, we analyzed a hotel booking dataset from the INN Hotels Group to understand the factors influencing booking cancellations.\
+The dataset contained over 36,000 records with detailed information about bookings, including customer attributes, booking characteristics, and cancellation status.\
+
+```{r bar_plot1}
+print(ggplot(hotel_data, aes(x = booking_status)) +
+  geom_bar(fill = "lightblue") +
+  labs(title = "Booking Status Distribution", x = "Booking Status", y = "Count"))
+```
+
+The dataset contains 36,275 bookings, with 24,390 classified as “Not Canceled” and 11,885 as “Canceled”.
+
+## **Key Statistical Findings**
+
+**1. Special Requests and Cancellations:**
+Bookings with special requests had a significantly lower cancellation rate (20.2%) compared to those without (43.2%)./
+Chi-square test revealed a statistically significant association between special requests and booking status./
+
+**2. Previous Cancellation History:**
+Surprisingly, guests with previous cancellations had a much lower current cancellation rate (4.73%) compared to those without (33.03%)./
+This suggests that past cancellation history might not be a straightforward predictor of future booking behavior./
+
+**3. Factors Influencing Cancellations:**
+**3.1 Lead Time:**
+
+1. Average lead time for canceled bookings: 139.2 days
+2. Average lead time for non-canceled bookings: 58.9 days
+3. Longer lead times strongly correlated with higher cancellation probability
+
+**3.2 Room Price:**
+
+1. Canceled bookings had a higher average room price
+2. Price difference: Approximately 10.7 units higher for canceled bookings
+
+**4. Seasonal Variations:**
+The correlation between factors and cancellations varied across seasons:
+
+**4.1 Fall:**
+Strongest lead time correlation (0.54).
+
+**4.2 Summer:**
+Special requests most negatively correlated with cancellations (-0.30).
+
+**4.3 Spring:** 
+Unique pattern with special requests having a strong negative correlation (-0.36).
+
+**4.4 Winter:** 
+Slightly different dynamics with weaker correlations
+
+```{r}
+hotel_data$booking_status_binary <- ifelse(hotel_data$booking_status == "Canceled", 1, 0)
+
+remove_zero_variance <- function(df) {
+  df[, sapply(df, function(col) sd(col, na.rm = TRUE) != 0)]
+}
+
+data_filtered <- remove_zero_variance(select_if(hotel_data, is.numeric))
+
+cor_data <- cor(data_filtered, use = "complete.obs")
+
+corrplot(cor_data, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix Recap", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
+```
+
+
+## **Preliminary Conclusions:**
+
+**1.** Lead time emerged as the most critical factor in predicting booking cancellations.
+**2.** Special requests significantly reduce the likelihood of cancellations.
+**3.** Booking behavior varies considerably across different seasons.
+**4.** Higher-priced rooms show a slight tendency towards more cancellations.
+
