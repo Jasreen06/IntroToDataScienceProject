@@ -30,6 +30,10 @@ knitr::opts_chunk$set(warning = F, message = F)
 options(scientific=T, digits = 3)
 ```
 
+# **Part 1 Recap**
+In our Part 1, we analyzed a hotel booking dataset from the INN Hotels Group to understand the factors influencing booking cancellations.\
+The dataset contained over 36,000 records with detailed information about bookings, including customer attributes, booking characteristics, and cancellation status.\
+
 ```{r import_dataset}
 hotel_data <- read.csv("C:/Users/dhawa/Documents/IntroToDataScienceProject/Dataset/INNHotelsGroup_min.csv")
 ``` 
@@ -37,11 +41,6 @@ hotel_data <- read.csv("C:/Users/dhawa/Documents/IntroToDataScienceProject/Datas
 ```{r data_structure}
 str(hotel_data)
 ```
-
-# **Introduction**
-## **Part 1 Recap**
-In our Part 1, we analyzed a hotel booking dataset from the INN Hotels Group to understand the factors influencing booking cancellations.\
-The dataset contained over 36,000 records with detailed information about bookings, including customer attributes, booking characteristics, and cancellation status.\
 
 ```{r bar_plot1}
 print(ggplot(hotel_data, aes(x = booking_status)) +
@@ -53,42 +52,42 @@ The dataset contains 36,275 bookings, with 24,390 classified as â€œNot Canceledâ
 
 ## **Key Statistical Findings**
 
-**1. Special Requests and Cancellations:**
-Bookings with special requests had a significantly lower cancellation rate (20.2%) compared to those without (43.2%)./
-Chi-square test revealed a statistically significant association between special requests and booking status./
+**1. Special Requests and Cancellations:** \
+Bookings with special requests had a significantly lower cancellation rate (20.2%) compared to those without (43.2%).\ 
+Chi-square test revealed a statistically significant association between special requests and booking status.\
 
-**2. Previous Cancellation History:**
-Surprisingly, guests with previous cancellations had a much lower current cancellation rate (4.73%) compared to those without (33.03%)./
-This suggests that past cancellation history might not be a straightforward predictor of future booking behavior./
+**2. Previous Cancellation History:**\
+Surprisingly, guests with previous cancellations had a much lower current cancellation rate (4.73%) compared to those without (33.03%).\
+This suggests that past cancellation history might not be a straightforward predictor of future booking behavior.\
 
-**3. Factors Influencing Cancellations:**
-**3.1 Lead Time:**
+**3. Factors Influencing Cancellations:**\
+**3.1 Lead Time:**\
 
-1. Average lead time for canceled bookings: 139.2 days
-2. Average lead time for non-canceled bookings: 58.9 days
-3. Longer lead times strongly correlated with higher cancellation probability
+1. Average lead time for canceled bookings: 139.2 days\
+2. Average lead time for non-canceled bookings: 58.9 days\
+3. Longer lead times strongly correlated with higher cancellation probability\
 
-**3.2 Room Price:**
+**3.2 Room Price:**\
 
-1. Canceled bookings had a higher average room price
-2. Price difference: Approximately 10.7 units higher for canceled bookings
+1. Canceled bookings had a higher average room price\
+2. Price difference: Approximately 10.7 units higher for canceled bookings\
 
-**4. Seasonal Variations:**
-The correlation between factors and cancellations varied across seasons:
+**4. Seasonal Variations:**\
+The correlation between factors and cancellations varied across seasons:\
 
-**4.1 Fall:**
-Strongest lead time correlation (0.54).
+**4.1 Fall:**\
+Strongest lead time correlation (0.54).\
 
-**4.2 Summer:**
-Special requests most negatively correlated with cancellations (-0.30).
+**4.2 Summer:**\
+Special requests most negatively correlated with cancellations (-0.30).\
 
-**4.3 Spring:** 
-Unique pattern with special requests having a strong negative correlation (-0.36).
+**4.3 Spring:** \
+Unique pattern with special requests having a strong negative correlation (-0.36).\
 
-**4.4 Winter:** 
-Slightly different dynamics with weaker correlations
+**4.4 Winter:** \
+Slightly different dynamics with weaker correlations\
 
-```{r}
+```{r correlation, fig.width=15, fig.height=10}
 hotel_data$booking_status_binary <- ifelse(hotel_data$booking_status == "Canceled", 1, 0)
 
 remove_zero_variance <- function(df) {
@@ -103,23 +102,26 @@ corrplot(cor_data, method = "color", addCoef.col = "black",
          title = "Correlation Matrix Recap", number.cex = 1, 
          tl.cex = 0.8, mar = c(1, 1, 2, 1))
 ```
+Lead time strongly predicts cancellations, with longer lead times increasing likelihood (0.44). More special requests (-0.25) and repeated guest status (-0.11) reduce cancellations, reflecting customer commitment and loyalty. Price per room has a weak positive correlation (0.14) with cancellations. Factors like travel party size and stay length show minimal impact on cancellation likelihood.\
 
+## **Preliminary Conclusions:**\
 
-## **Preliminary Conclusions:**
+**1.** Lead time emerged as the most critical factor in predicting booking cancellations.\
+**2.** Special requests significantly reduce the likelihood of cancellations.\
+**3.** Booking behavior varies considerably across different seasons.\
+**4.** Higher-priced rooms show a slight tendency towards more cancellations.\
 
-**1.** Lead time emerged as the most critical factor in predicting booking cancellations.
-**2.** Special requests significantly reduce the likelihood of cancellations.
-**3.** Booking behavior varies considerably across different seasons.
-**4.** Higher-priced rooms show a slight tendency towards more cancellations.
+# **SMART Questions:** \
 
-2. 
+## **2. Can we predict the likelihood of booking cancellation based on the lead time?**\
 
 ```{r}
 set.seed(123)
 train_index <- createDataPartition(hotel_data$booking_status_binary, p = 0.7, list = FALSE)
 train_data <- hotel_data[train_index, ]
 test_data <- hotel_data[-train_index, ]
-
+```
+```{r}
 logistic_model <- glm(
   booking_status_binary ~ lead_time + 
                           no_of_adults + 
@@ -131,9 +133,12 @@ logistic_model <- glm(
   family = binomial()
 )
 
-# Model summary
 summary(logistic_model)
 ```
+The key findings from the model are:\
+
+1. The lead_time coefficient is positive and statistically significant (p-value < 2e-16), indicating that as the lead time increases, the likelihood of booking cancellation also increases.\
+2. Other significant factors include the number of adults, number of children, market segment type, number of previous cancellations, and number of special requests.\
 
 ```{r}
 test_predictions <- predict(logistic_model, newdata = test_data, type = "response")
@@ -159,13 +164,23 @@ cat("Precision:", round(precision, 4), "\n")
 cat("Recall:", round(recall, 4), "\n")
 cat("F1 Score:", round(f1_score, 4), "\n")
 ```
+**1. Accuracy:** 0.786, meaning the model correctly classifies 78.6% of the bookings.\
+**2. Precision:** 0.733, indicating that 73.3% of the predictions of canceled bookings are correct.\
+**3. Recall:** 0.551, meaning the model correctly identifies 55.1% of the actual canceled bookings.\
+**4. F1-Score:** 0.629, which is the harmonic mean of precision and recall, providing a balanced evaluation of the model's performance.\
 
 ```{r}
 roc_curve <- roc(test_data$booking_status_binary, test_predictions)
 plot(roc_curve, main = "ROC Curve for Booking Cancellation Prediction")
-auc_value <- auc(roc_curve)
-cat("\nArea Under the ROC Curve (AUC):", round(auc_value, 4), "\n")
 ```
+
+The plot indicates that as the specificity (the ability to correctly identify non-canceled bookings) increases, the sensitivity (the ability to correctly identify canceled bookings) also increases. This suggests that the model has good discriminative power in predicting booking cancellations.\
+
+```{r}
+auc_value <- auc(roc_curve)
+cat("Area Under the ROC Curve (AUC):", round(auc_value, 4), "\n")
+```
+Area Under the ROC Curve (AUC): 0.848, suggesting the model has good discriminative power in predicting booking cancellations.\
 
 ```{r}
 ggplot(hotel_data, aes(x = lead_time, y = booking_status_binary)) +
@@ -178,17 +193,15 @@ ggplot(hotel_data, aes(x = lead_time, y = booking_status_binary)) +
   theme_minimal()
 ```
 
+The graph shows the relationship between the lead time (in days) and the probability of booking cancellation. As the lead time increases, the probability of booking cancellation rises in a non-linear fashion, with the curve becoming more steep at higher lead times.\
 
 
 
 
-
-
-
-5. 
+## **5. Can we predict peak booking times and high-demand periods?**
+ 
 ```{r}
 prepare_booking_data <- function(hotel_data) {
-  # Create features for prediction
   booking_data <- hotel_data %>%
     mutate(
       # Create binary high-demand indicator (above 75th percentile of bookings)
@@ -196,7 +209,6 @@ prepare_booking_data <- function(hotel_data) {
         avg_price_per_room > quantile(avg_price_per_room, 0.75), 
         1, 0
       )),
-      # Extract additional features
       booking_month = as.factor(arrival_month),
       is_weekend = no_of_weekend_nights > 0,
       total_nights = no_of_weekend_nights + no_of_week_nights,
@@ -206,16 +218,18 @@ prepare_booking_data <- function(hotel_data) {
   return(booking_data)
 }
 
-# Prepare the dataset
 prepared_data <- prepare_booking_data(hotel_data)
+```
 
-# Split the data
+```{r}
 set.seed(123)
 train_index <- createDataPartition(prepared_data$high_demand, p = 0.7, list = FALSE)
 train_data <- prepared_data[train_index, ]
 test_data <- prepared_data[-train_index, ]
+```
 
-# 1. Logistic Regression Model
+```{r}
+# Logistic Regression Model
 logistic_model <- glm(
   high_demand ~ lead_time + 
                 no_of_adults + 
@@ -228,11 +242,13 @@ logistic_model <- glm(
   family = binomial()
 )
 
-# Predictions for Logistic Regression
 logistic_pred <- predict(logistic_model, newdata = test_data, type = "response")
 logistic_class <- ifelse(logistic_pred > 0.5, 1, 0)
+```
 
-# 2. Random Forest Model
+
+```{r}
+# Random Forest Model
 rf_model <- randomForest(
   high_demand ~ lead_time + 
                 no_of_adults + 
@@ -249,7 +265,6 @@ rf_model <- randomForest(
 # Predictions for Random Forest
 rf_pred <- predict(rf_model, newdata = test_data, type = "prob")[,2]
 rf_class <- ifelse(rf_pred > 0.5, 1, 0)
-
 ```
 
 ```{r}
@@ -266,15 +281,19 @@ evaluate_model <- function(actual, predicted, model_name) {
   
   return(results)
 }
+```
 
-# Evaluate Models
+```{r}
 logistic_results <- evaluate_model(test_data$high_demand, logistic_class, "Logistic Regression")
+```
+
+
+```{r}
 rf_results <- evaluate_model(test_data$high_demand, rf_class, "Random Forest")
 ```
 
 ```{r}
 model_comparison <- rbind(logistic_results, rf_results)
-print("Model Performance Comparison:")
 print(model_comparison)
 ```
 ```{r}
@@ -283,7 +302,6 @@ rf_importance <- data.frame(
   Importance = importance(rf_model)[,1]
 ) %>% arrange(desc(Importance))
 
-print("Random Forest Feature Importance:")
 print(head(rf_importance, 10))
 ```
 
@@ -297,7 +315,10 @@ ggplot(head(rf_importance, 10), aes(x = reorder(Feature, Importance), y = Import
     y = "Importance"
   ) +
   theme_minimal()
+```
 
+
+```{r}
 # Predict High-Demand Periods
 predict_high_demand_periods <- function(model, test_data) {
   pred_probs <- predict(model, newdata = test_data, type = "response")
@@ -305,13 +326,15 @@ predict_high_demand_periods <- function(model, test_data) {
   
   return(high_demand_periods)
 }
-
-# Additional Insights
-cat("\nKey Insights:\n")
-cat("1. Most Important Predictors of High-Demand Periods:\n")
-print(head(rf_importance, 5))
-cat("\n2. Model Comparison:\n")
-print(model_comparison)
 ```
 
+
+```{r}
+print(head(rf_importance, 5))
+```
+
+
+```{r}
+print(model_comparison)
+```
 
