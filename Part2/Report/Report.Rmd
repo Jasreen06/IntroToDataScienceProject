@@ -17,11 +17,13 @@ library(ezids)
 library(ggplot2)
 library(dplyr)
 library(caret)
-library(nnet)
+library(tidyverse)
+library(pROC)
 library(corrplot)
-library(ramify)
+
 library(randomForest)
-library(patchwork)
+library(rpart)
+library(glmnet)
 
 #Setup knitter options
 knitr::opts_chunk$set(warning = F, message = F)
@@ -109,4 +111,207 @@ corrplot(cor_data, method = "color", addCoef.col = "black",
 **2.** Special requests significantly reduce the likelihood of cancellations.
 **3.** Booking behavior varies considerably across different seasons.
 **4.** Higher-priced rooms show a slight tendency towards more cancellations.
+
+2. 
+
+```{r}
+set.seed(123)
+train_index <- createDataPartition(hotel_data$booking_status_binary, p = 0.7, list = FALSE)
+train_data <- hotel_data[train_index, ]
+test_data <- hotel_data[-train_index, ]
+
+logistic_model <- glm(
+  booking_status_binary ~ lead_time + 
+                          no_of_adults + 
+                          no_of_children + 
+                          market_segment_type + 
+                          no_of_previous_cancellations + 
+                          no_of_special_requests,
+  data = train_data, 
+  family = binomial()
+)
+
+# Model summary
+summary(logistic_model)
+```
+
+```{r}
+test_predictions <- predict(logistic_model, newdata = test_data, type = "response")
+predicted_classes <- ifelse(test_predictions > 0.5, 1, 0)
+```
+
+```{r}
+confusion_matrix <- table(Actual = test_data$booking_status_binary, 
+                          Predicted = predicted_classes)
+print("Confusion Matrix:")
+print(confusion_matrix)
+```
+
+```{r}
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+precision <- confusion_matrix[2,2] / sum(confusion_matrix[,2])
+recall <- confusion_matrix[2,2] / sum(confusion_matrix[2,])
+f1_score <- 2 * (precision * recall) / (precision + recall)
+
+cat("\nModel Performance Metrics:\n")
+cat("Accuracy:", round(accuracy, 4), "\n")
+cat("Precision:", round(precision, 4), "\n")
+cat("Recall:", round(recall, 4), "\n")
+cat("F1 Score:", round(f1_score, 4), "\n")
+```
+
+```{r}
+roc_curve <- roc(test_data$booking_status_binary, test_predictions)
+plot(roc_curve, main = "ROC Curve for Booking Cancellation Prediction")
+auc_value <- auc(roc_curve)
+cat("\nArea Under the ROC Curve (AUC):", round(auc_value, 4), "\n")
+```
+
+```{r}
+ggplot(hotel_data, aes(x = lead_time, y = booking_status_binary)) +
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), se = TRUE) +
+  labs(
+    title = "Probability of Booking Cancellation vs Lead Time",
+    x = "Lead Time (Days)",
+    y = "Probability of Cancellation"
+  ) +
+  theme_minimal()
+```
+
+
+
+
+
+
+
+
+5. 
+```{r}
+prepare_booking_data <- function(hotel_data) {
+  # Create features for prediction
+  booking_data <- hotel_data %>%
+    mutate(
+      # Create binary high-demand indicator (above 75th percentile of bookings)
+      high_demand = as.factor(ifelse(
+        avg_price_per_room > quantile(avg_price_per_room, 0.75), 
+        1, 0
+      )),
+      # Extract additional features
+      booking_month = as.factor(arrival_month),
+      is_weekend = no_of_weekend_nights > 0,
+      total_nights = no_of_weekend_nights + no_of_week_nights,
+      is_repeated_guest = repeated_guest > 0
+    )
+  
+  return(booking_data)
+}
+
+# Prepare the dataset
+prepared_data <- prepare_booking_data(hotel_data)
+
+# Split the data
+set.seed(123)
+train_index <- createDataPartition(prepared_data$high_demand, p = 0.7, list = FALSE)
+train_data <- prepared_data[train_index, ]
+test_data <- prepared_data[-train_index, ]
+
+# 1. Logistic Regression Model
+logistic_model <- glm(
+  high_demand ~ lead_time + 
+                no_of_adults + 
+                no_of_children + 
+                total_nights + 
+                booking_month + 
+                market_segment_type + 
+                is_repeated_guest,
+  data = train_data, 
+  family = binomial()
+)
+
+# Predictions for Logistic Regression
+logistic_pred <- predict(logistic_model, newdata = test_data, type = "response")
+logistic_class <- ifelse(logistic_pred > 0.5, 1, 0)
+
+# 2. Random Forest Model
+rf_model <- randomForest(
+  high_demand ~ lead_time + 
+                no_of_adults + 
+                no_of_children + 
+                total_nights + 
+                booking_month + 
+                market_segment_type + 
+                is_repeated_guest,
+  data = train_data,
+  ntree = 500,
+  importance = TRUE
+)
+
+# Predictions for Random Forest
+rf_pred <- predict(rf_model, newdata = test_data, type = "prob")[,2]
+rf_class <- ifelse(rf_pred > 0.5, 1, 0)
+
+```
+
+```{r}
+evaluate_model <- function(actual, predicted, model_name) {
+  conf_matrix <- confusionMatrix(as.factor(predicted), as.factor(actual))
+  
+  results <- data.frame(
+    Model = model_name,
+    Accuracy = conf_matrix$overall['Accuracy'],
+    Precision = conf_matrix$byClass['Precision'],
+    Recall = conf_matrix$byClass['Recall'],
+    F1 = conf_matrix$byClass['F1']
+  )
+  
+  return(results)
+}
+
+# Evaluate Models
+logistic_results <- evaluate_model(test_data$high_demand, logistic_class, "Logistic Regression")
+rf_results <- evaluate_model(test_data$high_demand, rf_class, "Random Forest")
+```
+
+```{r}
+model_comparison <- rbind(logistic_results, rf_results)
+print("Model Performance Comparison:")
+print(model_comparison)
+```
+```{r}
+rf_importance <- data.frame(
+  Feature = rownames(importance(rf_model)),
+  Importance = importance(rf_model)[,1]
+) %>% arrange(desc(Importance))
+
+print("Random Forest Feature Importance:")
+print(head(rf_importance, 10))
+```
+
+```{r}
+ggplot(head(rf_importance, 10), aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Features Predicting High-Demand Periods",
+    x = "Features",
+    y = "Importance"
+  ) +
+  theme_minimal()
+
+# Predict High-Demand Periods
+predict_high_demand_periods <- function(model, test_data) {
+  pred_probs <- predict(model, newdata = test_data, type = "response")
+  high_demand_periods <- test_data[pred_probs > 0.7, ]
+  
+  return(high_demand_periods)
+}
+
+# Additional Insights
+cat("\nKey Insights:\n")
+cat("1. Most Important Predictors of High-Demand Periods:\n")
+print(head(rf_importance, 5))
+cat("\n2. Model Comparison:\n")
+print(model_comparison)
+```
+
 
