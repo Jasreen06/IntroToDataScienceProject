@@ -1,6 +1,6 @@
 # IntroToDataScienceProject
 
-This repository contains files and resources for an introductory data science project.
+This repository contains files and resources for DATS6101 Project.
 
 ## Table of Contents
   - [Table of Contents](#table-of-contents)
@@ -9,6 +9,5 @@ This repository contains files and resources for an introductory data science pr
 ## Project Structure
 
 - `Dataset/`: Directory containing the dataset used for the project.
-- `Report/`: Directory containing report.
-- `SMART_Questions_DATS6101_Project_1.pdf`: PDF file containing SMART questions for the project
-
+- `Part1/`: Directory containing report and files for DATS6101 Project-1.
+- `Part2/`: Directory containing report and files for DATS6101 Project-2.
