@@ -121,24 +121,16 @@ train_index <- createDataPartition(hotel_data$booking_status_binary, p = 0.7, li
 train_data <- hotel_data[train_index, ]
 test_data <- hotel_data[-train_index, ]
 ```
+
 ```{r}
 logistic_model <- glm(
-  booking_status_binary ~ lead_time + 
-                          no_of_adults + 
-                          no_of_children + 
-                          market_segment_type + 
-                          no_of_previous_cancellations + 
-                          no_of_special_requests,
+  booking_status_binary ~ lead_time,
   data = train_data, 
   family = binomial()
 )
 
 summary(logistic_model)
 ```
-The key findings from the model are:\
-
-1. The lead_time coefficient is positive and statistically significant (p-value < 2e-16), indicating that as the lead time increases, the likelihood of booking cancellation also increases.\
-2. Other significant factors include the number of adults, number of children, market segment type, number of previous cancellations, and number of special requests.\
 
 ```{r}
 test_predictions <- predict(logistic_model, newdata = test_data, type = "response")
@@ -164,10 +156,10 @@ cat("Precision:", round(precision, 4), "\n")
 cat("Recall:", round(recall, 4), "\n")
 cat("F1 Score:", round(f1_score, 4), "\n")
 ```
-**1. Accuracy:** 0.786, meaning the model correctly classifies 78.6% of the bookings.\
-**2. Precision:** 0.733, indicating that 73.3% of the predictions of canceled bookings are correct.\
-**3. Recall:** 0.551, meaning the model correctly identifies 55.1% of the actual canceled bookings.\
-**4. F1-Score:** 0.629, which is the harmonic mean of precision and recall, providing a balanced evaluation of the model's performance.\
+**1. Accuracy:** 0.754, meaning the model correctly classifies 75.4% of the bookings.\
+**2. Precision:** 0.723, indicating that 72.3% of the predictions of canceled bookings are correct.\
+**3. Recall:** 0.415, meaning the model correctly identifies 41.5% of the actual canceled bookings.\
+**4. F1-Score:** 0.527, which is the harmonic mean of precision and recall, providing a balanced evaluation of the model's performance.\
 
 ```{r}
 roc_curve <- roc(test_data$booking_status_binary, test_predictions)
@@ -180,7 +172,7 @@ The plot indicates that as the specificity (the ability to correctly identify no
 auc_value <- auc(roc_curve)
 cat("Area Under the ROC Curve (AUC):", round(auc_value, 4), "\n")
 ```
-Area Under the ROC Curve (AUC): 0.848, suggesting the model has good discriminative power in predicting booking cancellations.\
+Area Under the ROC Curve (AUC): 0.75, suggesting the model has good discriminative power in predicting booking cancellations.\
 
 ```{r}
 ggplot(hotel_data, aes(x = lead_time, y = booking_status_binary)) +
@@ -198,13 +190,12 @@ The graph shows the relationship between the lead time (in days) and the probabi
 
 
 
-## **5. Can we predict peak booking times and high-demand periods?**
+## **5. Can we predict high-demand periods?**
  
 ```{r}
 prepare_booking_data <- function(hotel_data) {
   booking_data <- hotel_data %>%
     mutate(
-      # Create binary high-demand indicator (above 75th percentile of bookings)
       high_demand = as.factor(ifelse(
         avg_price_per_room > quantile(avg_price_per_room, 0.75), 
         1, 0
@@ -217,7 +208,6 @@ prepare_booking_data <- function(hotel_data) {
   
   return(booking_data)
 }
-
 prepared_data <- prepare_booking_data(hotel_data)
 ```
 
@@ -227,25 +217,6 @@ train_index <- createDataPartition(prepared_data$high_demand, p = 0.7, list = FA
 train_data <- prepared_data[train_index, ]
 test_data <- prepared_data[-train_index, ]
 ```
-
-```{r}
-# Logistic Regression Model
-logistic_model <- glm(
-  high_demand ~ lead_time + 
-                no_of_adults + 
-                no_of_children + 
-                total_nights + 
-                booking_month + 
-                market_segment_type + 
-                is_repeated_guest,
-  data = train_data, 
-  family = binomial()
-)
-
-logistic_pred <- predict(logistic_model, newdata = test_data, type = "response")
-logistic_class <- ifelse(logistic_pred > 0.5, 1, 0)
-```
-
 
 ```{r}
 # Random Forest Model
@@ -262,12 +233,6 @@ rf_model <- randomForest(
   importance = TRUE
 )
 
-# Predictions for Random Forest
-rf_pred <- predict(rf_model, newdata = test_data, type = "prob")[,2]
-rf_class <- ifelse(rf_pred > 0.5, 1, 0)
-```
-
-```{r}
 evaluate_model <- function(actual, predicted, model_name) {
   conf_matrix <- confusionMatrix(as.factor(predicted), as.factor(actual))
   
@@ -281,27 +246,22 @@ evaluate_model <- function(actual, predicted, model_name) {
   
   return(results)
 }
-```
 
-```{r}
-logistic_results <- evaluate_model(test_data$high_demand, logistic_class, "Logistic Regression")
+rf_pred <- predict(rf_model, newdata = test_data, type = "prob")[,2]
+rf_class <- ifelse(rf_pred > 0.5, 1, 0)
 ```
-
 
 ```{r}
 rf_results <- evaluate_model(test_data$high_demand, rf_class, "Random Forest")
+print(rf_results)
 ```
 
-```{r}
-model_comparison <- rbind(logistic_results, rf_results)
-print(model_comparison)
-```
+
 ```{r}
 rf_importance <- data.frame(
   Feature = rownames(importance(rf_model)),
   Importance = importance(rf_model)[,1]
 ) %>% arrange(desc(Importance))
-
 print(head(rf_importance, 10))
 ```
 
@@ -317,24 +277,18 @@ ggplot(head(rf_importance, 10), aes(x = reorder(Feature, Importance), y = Import
   theme_minimal()
 ```
 
-
 ```{r}
-# Predict High-Demand Periods
 predict_high_demand_periods <- function(model, test_data) {
-  pred_probs <- predict(model, newdata = test_data, type = "response")
+  pred_probs <- predict(model, newdata = test_data, type = "prob")[,2]
   high_demand_periods <- test_data[pred_probs > 0.7, ]
+  
+  print("High-Demand Periods Prediction:")
+  print(paste("Total High-Demand Periods:", sum(pred_probs > 0.7)))
+  print("Sample of High-Demand Periods:")
+  print(head(high_demand_periods))
   
   return(high_demand_periods)
 }
+
+high_demand_periods <- predict_high_demand_periods(rf_model, test_data)
 ```
-
-
-```{r}
-print(head(rf_importance, 5))
-```
-
-
-```{r}
-print(model_comparison)
-```
-
