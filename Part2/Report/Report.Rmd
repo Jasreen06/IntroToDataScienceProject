@@ -35,7 +35,7 @@ In our Part 1, we analyzed a hotel booking dataset from the INN Hotels Group to 
 The dataset contained over 36,000 records with detailed information about bookings, including customer attributes, booking characteristics, and cancellation status.\
 
 ```{r import_dataset}
-hotel_data <- read.csv("C:/Users/dhawa/Documents/IntroToDataScienceProject/Dataset/INNHotelsGroup_min.csv")
+hotel_data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
 ``` 
 
 ```{r data_structure}
