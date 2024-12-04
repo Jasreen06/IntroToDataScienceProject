@@ -117,40 +117,52 @@ Lead time strongly predicts cancellations, with longer lead times increasing lik
 ## **1. Which factors most strongly influence booking cancellation decisions??**\
 
 ```{r}
+# Load necessary libraries
+library(randomForest)
+library(ggplot2)
 
-# Convert 'booking_status' to a binary variable (1 for 'Canceled', 0 for 'Not_Canceled')
-hotel_data$booking_status <- ifelse(hotel_data$booking_status == "Canceled", 1, 0)
+# Load the dataset (assuming the file is saved as CSV)
+data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
 
-# Select features and target
-X <- hotel_data[, !names(hotel_data) %in% c("booking_status", "Booking_ID")]  # Exclude 'booking_status' and 'Booking_ID'
-y <- hotel_data$booking_status
+# Clean the data: convert booking_status to a binary factor variable
+data$booking_status <- factor(ifelse(data$booking_status == "Canceled", 1, 0), levels = c(0, 1))
 
-# Convert categorical variables to factors
-X <- data.frame(lapply(X, function(x) if(is.factor(x)) as.factor(x) else x))
+# Convert categorical variables into factors
+data$type_of_meal_plan <- as.factor(data$type_of_meal_plan)
+data$room_type_reserved <- as.factor(data$room_type_reserved)
+data$market_segment_type <- as.factor(data$market_segment_type)
 
-# Fit a Random Forest model
-rf_model <- randomForest(booking_status ~ ., data = hotel_data, importance = TRUE, ntree = 100)
+# Handle missing values if needed (here we use mean imputation for simplicity)
+data[is.na(data)] <- lapply(data[is.na(data)], function(x) if(is.numeric(x)) mean(x, na.rm = TRUE) else x)
 
-# Get feature importances
-feature_importances <- data.frame(
-  feature = rownames(importance(rf_model)),
-  importance = importance(rf_model)[, 1]
-)
+# Train a Random Forest model
+rf_model <- randomForest(booking_status ~ avg_price_per_room + lead_time + no_of_special_requests + 
+                         no_of_adults + no_of_children + no_of_weekend_nights + 
+                         no_of_week_nights + type_of_meal_plan + required_car_parking_space + 
+                         room_type_reserved + market_segment_type + repeated_guest, 
+                         data = data, importance = TRUE, ntree = 100)
+rf_model
 
-# Sort features by importance
-feature_importances <- feature_importances[order(-feature_importances$importance),]
+# Extract feature importance
+feature_importance <- importance(rf_model)
 
-# Display the most important features
-print("Most important features:")
-print(feature_importances)
+feature_importance
 
-# Plot feature importances
-ggplot(feature_importances, aes(x = reorder(feature, importance), y = importance)) +
-  geom_bar(stat = "identity") +
-  coord_flip() +
-  xlab("Feature") +
-  ylab("Importance") +
-  ggtitle("Feature Importance using Random Forest")
+# Convert feature importance to a data frame for plotting
+importance_df <- data.frame(Feature = rownames(feature_importance), Importance = feature_importance[,1])
+
+# Sort features by importance in descending order
+importance_df <- importance_df[order(-importance_df$Importance),]
+
+importance_df
+
+# Plot feature importance using ggplot2
+ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +  # Flip the axes to make it easier to read
+  labs(title = "Feature Importance from Random Forest Model",
+       x = "Feature", y = "Importance") +
+  theme_minimal()
 
 ```
 
