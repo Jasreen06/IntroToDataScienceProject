@@ -25,6 +25,7 @@ library(randomForest)
 library(rpart)
 library(glmnet)
 
+
 #Setup knitter options
 knitr::opts_chunk$set(warning = F, message = F)
 options(scientific=T, digits = 3)
@@ -113,6 +114,46 @@ Lead time strongly predicts cancellations, with longer lead times increasing lik
 
 # **SMART Questions:** \
 
+## **1. Which factors most strongly influence booking cancellation decisions??**\
+
+```{r}
+
+# Convert 'booking_status' to a binary variable (1 for 'Canceled', 0 for 'Not_Canceled')
+hotel_data$booking_status <- ifelse(hotel_data$booking_status == "Canceled", 1, 0)
+
+# Select features and target
+X <- hotel_data[, !names(hotel_data) %in% c("booking_status", "Booking_ID")]  # Exclude 'booking_status' and 'Booking_ID'
+y <- hotel_data$booking_status
+
+# Convert categorical variables to factors
+X <- data.frame(lapply(X, function(x) if(is.factor(x)) as.factor(x) else x))
+
+# Fit a Random Forest model
+rf_model <- randomForest(booking_status ~ ., data = hotel_data, importance = TRUE, ntree = 100)
+
+# Get feature importances
+feature_importances <- data.frame(
+  feature = rownames(importance(rf_model)),
+  importance = importance(rf_model)[, 1]
+)
+
+# Sort features by importance
+feature_importances <- feature_importances[order(-feature_importances$importance),]
+
+# Display the most important features
+print("Most important features:")
+print(feature_importances)
+
+# Plot feature importances
+ggplot(feature_importances, aes(x = reorder(feature, importance), y = importance)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  xlab("Feature") +
+  ylab("Importance") +
+  ggtitle("Feature Importance using Random Forest")
+
+```
+
 ## **2. Can we predict the likelihood of booking cancellation based on the lead time?**\
 
 ```{r}
@@ -187,8 +228,44 @@ ggplot(hotel_data, aes(x = lead_time, y = booking_status_binary)) +
 
 The graph shows the relationship between the lead time (in days) and the probability of booking cancellation. As the lead time increases, the probability of booking cancellation rises in a non-linear fashion, with the curve becoming more steep at higher lead times.\
 
+## **3. What is the relationship between room price and the likelihood of a booking being canceled or not?**
+```{r}
 
 
+# Load necessary libraries
+library(tidyverse)
+
+# Load the dataset (assuming the file is saved as CSV)
+data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
+
+# Clean the data: convert booking_status to a binary variable
+data$booking_status <- ifelse(data$booking_status == "Canceled", 1, 0)
+
+
+# Fit a logistic regression model
+model <- glm(booking_status ~ avg_price_per_room, data = data, family = binomial)
+
+# Summary of the model
+summary(model)
+
+# Predict the probabilities
+data$predicted_prob <- predict(model, type = "response")
+
+# Create a binary prediction based on a threshold of 0.5
+data$predicted_class <- ifelse(data$predicted_prob > 0.5, 1, 0)
+
+# Model evaluation
+conf_matrix <- table(data$booking_status, data$predicted_class)
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+print(paste("Accuracy:", round(accuracy, 2)))
+
+# You can also calculate AUC-ROC if needed:
+library(pROC)
+roc_curve <- roc(data$booking_status, data$predicted_prob)
+plot(roc_curve)
+
+
+```
 
 ## **5. Can we predict high-demand periods?**
  
@@ -291,4 +368,101 @@ predict_high_demand_periods <- function(model, test_data) {
 }
 
 high_demand_periods <- predict_high_demand_periods(rf_model, test_data)
+```
+
+## **Creating model including important features**
+
+```{r}
+# Load required libraries
+library(dplyr)
+library(tidyr)
+library(randomForest)
+library(pROC)
+library(caret)
+
+# Load the dataset
+data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
+
+
+# Select high-importance features for the model
+# Based on the previous importance, we will select these features
+selected_features <- c(
+  'lead_time', 'no_of_special_requests', 'avg_price_per_room', 'market_segment_type',
+  'arrival_month', 'no_of_week_nights', 'no_of_weekend_nights'
+)
+
+# Subset the dataset to include selected features and the target variable
+data_high_importance <- data %>% 
+  select(all_of(c(selected_features, 'booking_status')))
+
+# Handle missing values by replacing NA with the median for numerical columns
+data_high_importance <- data_high_importance %>%
+  mutate(across(where(is.numeric), ~ replace(., is.na(.), median(., na.rm = TRUE))))
+
+# Encode categorical variables (market_segment_type, arrival_month)
+data_high_importance <- data_high_importance %>%
+  mutate(
+    market_segment_type = factor(market_segment_type),
+    arrival_month = factor(arrival_month)
+  )
+
+# One-hot encode categorical variables using model.matrix, dropping the first level to avoid multicollinearity
+data_encoded <- cbind(
+  data_high_importance %>% select(-booking_status),
+  model.matrix(~ market_segment_type + arrival_month - 1, data = data_high_importance)  # Drop one category
+)
+
+# Convert booking_status to binary (0 = Not Canceled, 1 = Canceled)
+data_encoded$booking_status <- ifelse(data_high_importance$booking_status == "Canceled", 1, 0)
+
+# Ensure that booking_status is a factor with two levels
+data_encoded$booking_status <- factor(data_encoded$booking_status, levels = c(0, 1))
+
+# Step 2: Handle Multicollinearity
+# We will create a subset of the features based on their importance and correlations
+# A simple way to handle multicollinearity is to manually drop features that might be correlated
+# For example, we can drop `market_segment_type` and `arrival_month` after inspecting their importance
+
+# Drop `market_segment_type` and `arrival_month` to simplify
+data_encoded_sub <- data_encoded %>%
+  select(-c(market_segment_typeCorporate, market_segment_typeAviation, market_segment_typeComplementary, 
+            market_segment_typeOffline, market_segment_typeOnline, arrival_month2, arrival_month3, arrival_month7))
+
+# Train a Random Forest model without tuning hyperparameters
+set.seed(123)  # For reproducibility
+rf_model <- randomForest(booking_status ~ ., data = data_encoded_sub, ntree = 100)
+
+# Print the model summary
+print(rf_model)
+
+# Step 3: Model Evaluation
+# Predict on the whole dataset
+pred_class <- predict(rf_model, newdata = data_encoded_sub)
+
+# Confusion Matrix
+confusion_matrix <- table(Predicted = pred_class, Actual = data_encoded_sub$booking_status)
+print(confusion_matrix)
+
+# Calculate accuracy
+accuracy <- sum(pred_class == data_encoded_sub$booking_status) / length(pred_class)
+cat("Accuracy of the Random Forest model:", accuracy, "\n")
+
+# Calculate precision, recall, and F1-score
+precision <- posPredValue(pred_class, data_encoded_sub$booking_status)
+recall <- sensitivity(pred_class, data_encoded_sub$booking_status)
+f1_score <- (2 * precision * recall) / (precision + recall)
+
+cat("Precision:", precision, "\n")
+cat("Recall:", recall, "\n")
+cat("F1-Score:", f1_score, "\n")
+
+# Plot ROC curve (Ensure booking_status is a factor with two levels)
+pred_probs <- predict(rf_model, newdata = data_encoded_sub, type = "prob")[, 2]  # Predicted probabilities for class 1
+roc_curve <- roc(data_encoded_sub$booking_status, pred_probs)
+plot(roc_curve, main = "ROC Curve", col = "blue")
+
+# AUC
+cat("AUC:", auc(roc_curve), "\n")
+
+
 ```
