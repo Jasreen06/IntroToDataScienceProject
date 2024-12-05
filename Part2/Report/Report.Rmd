@@ -20,7 +20,6 @@ library(caret)
 library(tidyverse)
 library(pROC)
 library(corrplot)
-
 library(randomForest)
 library(rpart)
 library(glmnet)
@@ -103,6 +102,7 @@ corrplot(cor_data, method = "color", addCoef.col = "black",
          title = "Correlation Matrix Recap", number.cex = 1, 
          tl.cex = 0.8, mar = c(1, 1, 2, 1))
 ```
+
 Lead time strongly predicts cancellations, with longer lead times increasing likelihood (0.44). More special requests (-0.25) and repeated guest status (-0.11) reduce cancellations, reflecting customer commitment and loyalty. Price per room has a weak positive correlation (0.14) with cancellations. Factors like travel party size and stay length show minimal impact on cancellation likelihood.\
 
 ## **Preliminary Conclusions:**\
@@ -114,12 +114,14 @@ Lead time strongly predicts cancellations, with longer lead times increasing lik
 
 # **SMART Questions:** \
 
-## **1. Which factors most strongly influence booking cancellation decisions??**\
+## **1. What key factors most strongly influence booking cancellations?**\
 
 ```{r}
-# Load necessary libraries
-library(randomForest)
-library(ggplot2)
+hotel_data$type_of_meal_plan <- as.factor(hotel_data$type_of_meal_plan)
+hotel_data$room_type_reserved <- as.factor(hotel_data$room_type_reserved)
+hotel_data$market_segment_type <- as.factor(hotel_data$market_segment_type)
+hotel_data$booking_status_binary <- as.factor(hotel_data$booking_status_binary)
+```
 
 # Load the dataset (assuming the file is saved as CSV)
 #data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
@@ -143,19 +145,26 @@ rf_model1 <-randomForest(booking_status_binary ~ no_of_adults + no_of_children +
                           no_of_previous_cancellations + avg_price_per_room + no_of_special_requests,
                         data = hotel_data, importance = TRUE, ntree = 100)
 
+print(rf_model)
+```
+
+```{r}
 # Extract feature importance
 feature_importance <- importance(rf_model1)
 
 feature_importance
+```
 
+```{r}
 # Convert feature importance to a data frame for plotting
 importance_df <- data.frame(Feature = rownames(feature_importance), Importance = feature_importance[,1])
 
-# Sort features by importance in descending order
 importance_df <- importance_df[order(-importance_df$Importance),]
-
 importance_df
+```
 
+
+```{r}
 # Plot feature importance using ggplot2
 ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
   geom_bar(stat = "identity", fill = "steelblue") +
@@ -163,7 +172,11 @@ ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
   labs(title = "Feature Importance from Random Forest Model",
        x = "Feature", y = "Importance") +
   theme_minimal()
+```
 
+```{r}
+predictions <- predict(rf_model, hotel_data, type = "response")
+confusionMatrix(predictions, hotel_data$booking_status_binary, positive = "1")
 ```
 
 ## **2. Can we predict the likelihood of booking cancellation based on the lead time?**\
@@ -228,6 +241,8 @@ cat("Area Under the ROC Curve (AUC):", round(auc_value, 4), "\n")
 Area Under the ROC Curve (AUC): 0.75, suggesting the model has good discriminative power in predicting booking cancellations.\
 
 ```{r}
+hotel_data$booking_status_binary <- as.numeric(as.character(hotel_data$booking_status_binary))
+
 ggplot(hotel_data, aes(x = lead_time, y = booking_status_binary)) +
   geom_smooth(method = "glm", method.args = list(family = "binomial"), se = TRUE) +
   labs(
@@ -241,6 +256,7 @@ ggplot(hotel_data, aes(x = lead_time, y = booking_status_binary)) +
 The graph shows the relationship between the lead time (in days) and the probability of booking cancellation. As the lead time increases, the probability of booking cancellation rises in a non-linear fashion, with the curve becoming more steep at higher lead times.\
 
 ## **3. What is the relationship between room price and the likelihood of a booking being canceled or not?**
+
 ```{r}
 
 
@@ -270,6 +286,7 @@ hotel_data$predicted_class <- ifelse(hotel_data$predicted_prob > 0.5, 1, 0)
 conf_matrix <- table(hotel_data$booking_status_binary, hotel_data$predicted_class)
 accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
 print(paste("Accuracy:", round(accuracy, 2)))
+```
 
 # You can also calculate AUC-ROC if needed:
 library(pROC)
@@ -288,6 +305,9 @@ boxplot(avg_price_per_room ~ booking_status_binary, data = hotel_data,
 
 
 
+```{r}
+auc_value <- auc(roc_curve)
+print(paste("AUC:", round(auc_value, 2)))
 ```
 
 ## **5. Can we predict high-demand periods?**
