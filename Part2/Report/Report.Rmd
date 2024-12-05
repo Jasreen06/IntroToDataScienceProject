@@ -120,22 +120,8 @@ Lead time strongly predicts cancellations, with longer lead times increasing lik
 hotel_data$type_of_meal_plan <- as.factor(hotel_data$type_of_meal_plan)
 hotel_data$room_type_reserved <- as.factor(hotel_data$room_type_reserved)
 hotel_data$market_segment_type <- as.factor(hotel_data$market_segment_type)
-hotel_data$booking_status_binary <- as.factor(hotel_data$booking_status_binary)
-```
+#hotel_data$booking_status <- as.factor(hotel_data$booking_status)
 
-# Load the dataset (assuming the file is saved as CSV)
-#data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
-
-# Clean the data: convert booking_status to a binary factor variable
-#data$booking_status <- factor(ifelse(data$booking_status == "Canceled", 1, 0), levels = c(0, 1))
-
-# Convert categorical variables into factors
-hotel_data$type_of_meal_plan <- as.factor(hotel_data$type_of_meal_plan)
-hotel_data$room_type_reserved <- as.factor(hotel_data$room_type_reserved)
-hotel_data$market_segment_type <- as.factor(hotel_data$market_segment_type)
-
-# Handle missing values if needed (here we use mean imputation for simplicity)
-#data[is.na(data)] <- lapply(data[is.na(data)], function(x) if(is.numeric(x)) mean(x, na.rm = TRUE) else x)
 
 # Train a Random Forest model
 rf_model1 <-randomForest(booking_status_binary ~ no_of_adults + no_of_children + no_of_weekend_nights + 
@@ -145,26 +131,24 @@ rf_model1 <-randomForest(booking_status_binary ~ no_of_adults + no_of_children +
                           no_of_previous_cancellations + avg_price_per_room + no_of_special_requests,
                         data = hotel_data, importance = TRUE, ntree = 100)
 
-print(rf_model)
-```
+print(rf_model1)
 
-```{r}
+
+
 # Extract feature importance
 feature_importance <- importance(rf_model1)
 
 feature_importance
-```
 
-```{r}
 # Convert feature importance to a data frame for plotting
 importance_df <- data.frame(Feature = rownames(feature_importance), Importance = feature_importance[,1])
 
 importance_df <- importance_df[order(-importance_df$Importance),]
 importance_df
-```
 
 
-```{r}
+
+
 # Plot feature importance using ggplot2
 ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
   geom_bar(stat = "identity", fill = "steelblue") +
@@ -172,11 +156,7 @@ ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
   labs(title = "Feature Importance from Random Forest Model",
        x = "Feature", y = "Importance") +
   theme_minimal()
-```
 
-```{r}
-predictions <- predict(rf_model, hotel_data, type = "response")
-confusionMatrix(predictions, hotel_data$booking_status_binary, positive = "1")
 ```
 
 ## **2. Can we predict the likelihood of booking cancellation based on the lead time?**\
@@ -286,7 +266,7 @@ hotel_data$predicted_class <- ifelse(hotel_data$predicted_prob > 0.5, 1, 0)
 conf_matrix <- table(hotel_data$booking_status_binary, hotel_data$predicted_class)
 accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
 print(paste("Accuracy:", round(accuracy, 2)))
-```
+
 
 # You can also calculate AUC-ROC if needed:
 library(pROC)
@@ -305,7 +285,7 @@ boxplot(avg_price_per_room ~ booking_status_binary, data = hotel_data,
 
 
 
-```{r}
+
 auc_value <- auc(roc_curve)
 print(paste("AUC:", round(auc_value, 2)))
 ```
@@ -598,5 +578,36 @@ print(cv_model)
 # Stop the parallel cluster
 stopCluster(cl)
 
+
+```
+```{r}
+# Load necessary libraries
+library(corrplot)
+library(ggplot2)
+
+# Convert booking status to numeric (if it's a factor)
+hotel_data$booking_status_binary <- as.numeric(hotel_data$booking_status_binary)
+
+# Convert categorical variables (market_segment_type and arrival_month) to numeric
+hotel_data$market_segment_type <- as.factor(hotel_data$market_segment_type)
+hotel_data$arrival_month <- as.factor(hotel_data$arrival_month)
+
+# Convert these factors to numeric codes
+hotel_data$market_segment_type_num <- as.numeric(hotel_data$market_segment_type)
+hotel_data$arrival_month_num <- as.numeric(hotel_data$arrival_month)
+
+# Subset the relevant columns for correlation (including booking_status_binary)
+corr_data <- hotel_data[, c("booking_status_binary", "lead_time", "no_of_special_requests", 
+                            "avg_price_per_room", "market_segment_type_num", "no_of_week_nights", 
+                            "no_of_weekend_nights", "arrival_month_num")]
+
+# Calculate the correlation matrix
+cor_matrix <- cor(corr_data)
+
+# Print the correlation matrix
+print(cor_matrix)
+
+# Plot the correlation matrix using corrplot
+corrplot(cor_matrix, method = "circle", type = "lower", tl.col = "black", tl.srt = 45)
 
 ```
