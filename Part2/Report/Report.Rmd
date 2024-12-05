@@ -122,29 +122,29 @@ library(randomForest)
 library(ggplot2)
 
 # Load the dataset (assuming the file is saved as CSV)
-data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
+#data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
 
 # Clean the data: convert booking_status to a binary factor variable
-data$booking_status <- factor(ifelse(data$booking_status == "Canceled", 1, 0), levels = c(0, 1))
+#data$booking_status <- factor(ifelse(data$booking_status == "Canceled", 1, 0), levels = c(0, 1))
 
 # Convert categorical variables into factors
-data$type_of_meal_plan <- as.factor(data$type_of_meal_plan)
-data$room_type_reserved <- as.factor(data$room_type_reserved)
-data$market_segment_type <- as.factor(data$market_segment_type)
+hotel_data$type_of_meal_plan <- as.factor(hotel_data$type_of_meal_plan)
+hotel_data$room_type_reserved <- as.factor(hotel_data$room_type_reserved)
+hotel_data$market_segment_type <- as.factor(hotel_data$market_segment_type)
 
 # Handle missing values if needed (here we use mean imputation for simplicity)
-data[is.na(data)] <- lapply(data[is.na(data)], function(x) if(is.numeric(x)) mean(x, na.rm = TRUE) else x)
+#data[is.na(data)] <- lapply(data[is.na(data)], function(x) if(is.numeric(x)) mean(x, na.rm = TRUE) else x)
 
 # Train a Random Forest model
-rf_model <- randomForest(booking_status ~ avg_price_per_room + lead_time + no_of_special_requests + 
-                         no_of_adults + no_of_children + no_of_weekend_nights + 
-                         no_of_week_nights + type_of_meal_plan + required_car_parking_space + 
-                         room_type_reserved + market_segment_type + repeated_guest, 
-                         data = data, importance = TRUE, ntree = 100)
-rf_model
+rf_model1 <-randomForest(booking_status_binary ~ no_of_adults + no_of_children + no_of_weekend_nights + 
+                          no_of_week_nights + type_of_meal_plan + required_car_parking_space + 
+                          room_type_reserved + lead_time + arrival_year + arrival_month + 
+                          market_segment_type + repeated_guest + 
+                          no_of_previous_cancellations + avg_price_per_room + no_of_special_requests,
+                        data = hotel_data, importance = TRUE, ntree = 100)
 
 # Extract feature importance
-feature_importance <- importance(rf_model)
+feature_importance <- importance(rf_model1)
 
 feature_importance
 
@@ -248,33 +248,44 @@ The graph shows the relationship between the lead time (in days) and the probabi
 library(tidyverse)
 
 # Load the dataset (assuming the file is saved as CSV)
-data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
+#data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
 
 # Clean the data: convert booking_status to a binary variable
-data$booking_status <- ifelse(data$booking_status == "Canceled", 1, 0)
+#data$booking_status <- ifelse(data$booking_status == "Canceled", 1, 0)
 
 
 # Fit a logistic regression model
-model <- glm(booking_status ~ avg_price_per_room, data = data, family = binomial)
+lrmodel1 <- glm(booking_status_binary ~ avg_price_per_room, data = hotel_data, family = binomial)
 
 # Summary of the model
-summary(model)
+summary(lrmodel1)
 
 # Predict the probabilities
-data$predicted_prob <- predict(model, type = "response")
+hotel_data$predicted_prob <- predict(lrmodel1, type = "response")
 
 # Create a binary prediction based on a threshold of 0.5
-data$predicted_class <- ifelse(data$predicted_prob > 0.5, 1, 0)
+hotel_data$predicted_class <- ifelse(hotel_data$predicted_prob > 0.5, 1, 0)
 
 # Model evaluation
-conf_matrix <- table(data$booking_status, data$predicted_class)
+conf_matrix <- table(hotel_data$booking_status_binary, hotel_data$predicted_class)
 accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
 print(paste("Accuracy:", round(accuracy, 2)))
 
 # You can also calculate AUC-ROC if needed:
 library(pROC)
-roc_curve <- roc(data$booking_status, data$predicted_prob)
+roc_curve <- roc(hotel_data$booking_status_binary, hotel_data$predicted_prob)
 plot(roc_curve)
+
+# Scatter plot to examine the relationship between price and cancellation
+plot(hotel_data$avg_price_per_room, hotel_data$booking_status_binary, 
+     main = "Scatter plot of Avg Price per Room vs Booking Status", 
+     xlab = "Average Price per Room", ylab = "Booking Status")
+
+# Boxplot for average price per room vs booking cancellation status
+boxplot(avg_price_per_room ~ booking_status_binary, data = hotel_data, 
+        main = "Boxplot of Avg Price per Room vs Booking Status", 
+        xlab = "Booking Status", ylab = "Average Price per Room")
+
 
 
 ```
@@ -385,96 +396,187 @@ high_demand_periods <- predict_high_demand_periods(rf_model, test_data)
 ## **Creating model including important features**
 
 ```{r}
-# Load required libraries
-library(dplyr)
-library(tidyr)
-library(randomForest)
-library(pROC)
+# Load necessary libraries
+library(car)
+
+# Assuming you've already fitted the logistic regression model
+lm_model1 <- lm(booking_status_binary ~ lead_time + no_of_special_requests + avg_price_per_room + 
+                 market_segment_type + no_of_week_nights + no_of_weekend_nights + arrival_month,
+                 data = hotel_data)
+#summary(lm_model1)
+
+gvif_values <- vif(lm_model1)
+
+print(gvif_values)
+
+# Manually extract degrees of freedom (Df) for each variable
+df_values <- sapply(names(gvif_values), function(var) {
+  if (is.factor(hotel_data[[var]])) {
+    # For factors, degrees of freedom is the number of levels minus 1
+    return(length(unique(hotel_data[[var]])) - 1)
+  } else {
+    # For continuous variables, degrees of freedom is 1
+    return(1)
+  }
+})
+
+# Print the degrees of freedom to check
+print(df_values)
+
+```
+
+
+#logistic regression
+```{r}
+# Install necessary packages for model evaluation
+
 library(caret)
+library(pROC)
 
-# Load the dataset
-data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
+#hotel_data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
+  
+# Convert booking_status to numeric (0 for Not Canceled, 1 for Canceled)
+#hotel_data$booking_status <- ifelse(hotel_data$booking_status == "Not_Canceled", 0, 1)
 
+# Assuming the logistic regression model is already fitted
+# Fit Logistic Regression model (if not already done)
+log_model2 <- glm(booking_status_binary ~ lead_time + no_of_special_requests + avg_price_per_room + 
+                 market_segment_type + no_of_week_nights + no_of_weekend_nights + arrival_month, 
+                 data = hotel_data, family = binomial)
 
-# Select high-importance features for the model
-# Based on the previous importance, we will select these features
-selected_features <- c(
-  'lead_time', 'no_of_special_requests', 'avg_price_per_room', 'market_segment_type',
-  'arrival_month', 'no_of_week_nights', 'no_of_weekend_nights'
-)
+# Make predictions on the data (for simplicity, using the same dataset, ideally should be test data)
+pred_probs <- predict(log_model2, type = "response")  # Get predicted probabilities
 
-# Subset the dataset to include selected features and the target variable
-data_high_importance <- data %>% 
-  select(all_of(c(selected_features, 'booking_status')))
-
-# Handle missing values by replacing NA with the median for numerical columns
-data_high_importance <- data_high_importance %>%
-  mutate(across(where(is.numeric), ~ replace(., is.na(.), median(., na.rm = TRUE))))
-
-# Encode categorical variables (market_segment_type, arrival_month)
-data_high_importance <- data_high_importance %>%
-  mutate(
-    market_segment_type = factor(market_segment_type),
-    arrival_month = factor(arrival_month)
-  )
-
-# One-hot encode categorical variables using model.matrix, dropping the first level to avoid multicollinearity
-data_encoded <- cbind(
-  data_high_importance %>% select(-booking_status),
-  model.matrix(~ market_segment_type + arrival_month - 1, data = data_high_importance)  # Drop one category
-)
-
-# Convert booking_status to binary (0 = Not Canceled, 1 = Canceled)
-data_encoded$booking_status <- ifelse(data_high_importance$booking_status == "Canceled", 1, 0)
-
-# Ensure that booking_status is a factor with two levels
-data_encoded$booking_status <- factor(data_encoded$booking_status, levels = c(0, 1))
-
-# Step 2: Handle Multicollinearity
-# We will create a subset of the features based on their importance and correlations
-# A simple way to handle multicollinearity is to manually drop features that might be correlated
-# For example, we can drop `market_segment_type` and `arrival_month` after inspecting their importance
-
-# Drop `market_segment_type` and `arrival_month` to simplify
-data_encoded_sub <- data_encoded %>%
-  select(-c(market_segment_typeCorporate, market_segment_typeAviation, market_segment_typeComplementary, 
-            market_segment_typeOffline, market_segment_typeOnline, arrival_month2, arrival_month3, arrival_month7))
-
-# Train a Random Forest model without tuning hyperparameters
-set.seed(123)  # For reproducibility
-rf_model <- randomForest(booking_status ~ ., data = data_encoded_sub, ntree = 100)
-
-# Print the model summary
-print(rf_model)
-
-# Step 3: Model Evaluation
-# Predict on the whole dataset
-pred_class <- predict(rf_model, newdata = data_encoded_sub)
+# Convert predicted probabilities to class labels (using 0.5 threshold)
+pred_class <- ifelse(pred_probs > 0.5, 1, 0)
 
 # Confusion Matrix
-confusion_matrix <- table(Predicted = pred_class, Actual = data_encoded_sub$booking_status)
-print(confusion_matrix)
+conf_matrix <- confusionMatrix(factor(pred_class), factor(hotel_data$booking_status_binary))
 
-# Calculate accuracy
-accuracy <- sum(pred_class == data_encoded_sub$booking_status) / length(pred_class)
-cat("Accuracy of the Random Forest model:", accuracy, "\n")
+# Extract the confusion matrix values
+cm <- conf_matrix$table
+accuracy <- conf_matrix$overall['Accuracy']
+precision <- conf_matrix$byClass['Precision']
+recall <- conf_matrix$byClass['Recall']
+f1_score <- conf_matrix$byClass['F1']
+specificity <- conf_matrix$byClass['Specificity']
 
-# Calculate precision, recall, and F1-score
-precision <- posPredValue(pred_class, data_encoded_sub$booking_status)
-recall <- sensitivity(pred_class, data_encoded_sub$booking_status)
-f1_score <- (2 * precision * recall) / (precision + recall)
+# Print confusion matrix with additional metrics
+cat("\nConfusion Matrix and Statistics\n")
+cat("\n           Reference\n")
+cat("Prediction   0   1\n")
+cat("           0", cm[1,1], cm[1,2], "\n")
+cat("           1", cm[2,1], cm[2,2], "\n")
+cat("\nAccuracy:", round(accuracy, 4), "\n")
+cat("Precision:", round(precision, 4), "\n")
+cat("Recall:", round(recall, 4), "\n")
+cat("F1-Score:", round(f1_score, 4), "\n")
 
-cat("Precision:", precision, "\n")
-cat("Recall:", recall, "\n")
-cat("F1-Score:", f1_score, "\n")
+# Calculate ROC-AUC
+roc_curve <- roc(hotel_data$booking_status_binary, pred_probs)
 
-# Plot ROC curve (Ensure booking_status is a factor with two levels)
-pred_probs <- predict(rf_model, newdata = data_encoded_sub, type = "prob")[, 2]  # Predicted probabilities for class 1
-roc_curve <- roc(data_encoded_sub$booking_status, pred_probs)
-plot(roc_curve, main = "ROC Curve", col = "blue")
+# Print AUC and plot ROC curve
+auc_value <- auc(roc_curve)
+cat("\nAUC:", round(auc_value, 4), "\n")
 
-# AUC
-cat("AUC:", auc(roc_curve), "\n")
+# Plot ROC curve
+plot(roc_curve, main = "ROC Curve for Booking Cancellation Prediction")
+
+
+```
+
+##Random forest
+```{r}
+
+library(randomForest)
+library(caret)
+library(pROC)
+
+hotel_data$booking_status_binary <- as.factor(hotel_data$booking_status_binary)
+
+# Fit Random Forest model for classification (binary target)
+rf_model2 <- randomForest(booking_status_binary ~ lead_time + no_of_special_requests + avg_price_per_room + 
+                          market_segment_type + no_of_week_nights + no_of_weekend_nights + arrival_month, 
+                          data = hotel_data, ntree = 100)
+
+# Print the model summary to ensure it's treated as classification
+print(rf_model2)
+
+pred_class_rf <- predict(rf_model2, newdata = hotel_data)
+
+# Confusion Matrix (Make sure both predicted and actual values have the same levels)
+conf_matrix_rf <- confusionMatrix(pred_class_rf, hotel_data$booking_status_binary)
+
+# Print confusion matrix and the calculated metrics
+print(conf_matrix_rf)
+
+# Extracting Precision, Recall, and Accuracy from the confusion matrix
+precision <- conf_matrix_rf$byClass['Pos Pred Value']
+recall <- conf_matrix_rf$byClass['Sensitivity']
+accuracy <- conf_matrix_rf$overall['Accuracy']
+
+cat("\nPrecision:", round(precision, 4), "\n")
+cat("Recall:", round(recall, 4), "\n")
+cat("Accuracy:", round(accuracy, 4), "\n")
+
+# Predict class probabilities for the binary outcome (probabilities for each class, we need the second column for class 1)
+pred_probs_rf <- predict(rf_model2, newdata = hotel_data, type = "prob")[, 2]
+
+# Calculate ROC-AUC for Random Forest (use the second column for class 1 probabilities)
+roc_curve_rf <- roc(hotel_data$booking_status_binary, pred_probs_rf)
+
+# Print AUC value
+auc_value_rf <- auc(roc_curve_rf)
+cat("\nAUC:", round(auc_value_rf, 4), "\n")
+
+# Plot the ROC curve
+plot(roc_curve_rf, main = "ROC Curve for Random Forest Model")
+
+conf_matrix_df <- as.data.frame(as.table(conf_matrix_rf))
+colnames(conf_matrix_df) <- c("Actual", "Predicted", "Freq")  # Rename columns for clarity
+
+# Plot confusion matrix as heatmap using ggplot2
+ggplot(conf_matrix_df, aes(x = Predicted, y = Actual, fill = Freq)) +
+  geom_tile() +
+  geom_text(aes(label = Freq), color = "black", size = 6) +
+  scale_fill_gradient(low = "white", high = "blue") +
+  labs(x = "Predicted", y = "Actual", title = "Confusion Matrix Heatmap") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+#Perform cross-validation with Random Forest using 5-fold cross-validation
+```{r}
+# Install and load caret package
+
+# Install and load necessary packages
+
+library(caret)
+library(doParallel)
+library(randomForest)
+
+# Set up parallel processing (use all but 1 core)
+cl <- makeCluster(detectCores() - 1)
+registerDoParallel(cl)
+
+# Reduce number of trees for faster cross-validation
+ntree_val <- 50  # Use a smaller number of trees
+
+# Perform cross-validation with Random Forest using 5-fold cross-validation
+cv_model <- train(booking_status_binary ~ lead_time + no_of_special_requests + avg_price_per_room + 
+                  market_segment_type + no_of_week_nights + no_of_weekend_nights + arrival_month, 
+                  data = hotel_data,
+                  method = "rf",
+                  trControl = trainControl(method = "cv", number = 5),  # 5-fold cross-validation
+                  tuneGrid = data.frame(mtry = 3),  # You can adjust mtry for tuning
+                  ntree = ntree_val)  # Set ntree to a smaller value for faster computation
+
+# Print the results of cross-validation
+print(cv_model)
+
+# Stop the parallel cluster
+stopCluster(cl)
 
 
 ```
