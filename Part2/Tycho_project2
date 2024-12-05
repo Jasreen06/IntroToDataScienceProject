@@ -168,3 +168,29 @@ print(confusion_matrix)
 accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
 cat("Accuracy:", accuracy, "\n")
 ```
+
+
+
+
+
+
+
+
+
+```{r}
+
+```
+
+```{r}
+# Fit a decision tree with adjusted parameters
+tree_model <- rpart(
+  booking_status_binary ~ season + lead_time + no_of_special_requests,
+  data = hotel_data_clean,
+  method = "class",
+  control = rpart.control(cp = 0.001, minsplit = 10, maxdepth = 5)  # Lower cp and minsplit to allow more splits
+)
+
+# Plot the updated decision tree
+rpart.plot(tree_model, type = 3, extra = 102, fallen.leaves = TRUE, 
+           main = "Decision Tree: Seasonal Trends and Cancellations")
+```
