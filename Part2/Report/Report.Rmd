@@ -31,8 +31,8 @@ options(scientific=T, digits = 3)
 ```
 
 # **Part 1 Recap**
+
 In our Part 1, we analyzed a hotel booking dataset from the INN Hotels Group to understand the factors influencing booking cancellations.\
-The dataset contained over 36,000 records with detailed information about bookings, including customer attributes, booking characteristics, and cancellation status.\
 
 ```{r import_dataset}
 hotel_data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
@@ -41,6 +41,7 @@ hotel_data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
 ```{r data_structure}
 str(hotel_data)
 ```
+The dataset contains hotel bookings collected from 2017-2018 and is characterized by a total of 19 columns, comprising 5 categorical and 14 numerical variables.\
 
 ```{r bar_plot1}
 print(ggplot(hotel_data, aes(x = booking_status)) +
@@ -48,7 +49,7 @@ print(ggplot(hotel_data, aes(x = booking_status)) +
   labs(title = "Booking Status Distribution", x = "Booking Status", y = "Count"))
 ```
 
-The dataset contains 36,275 bookings, with 24,390 classified as “Not Canceled” and 11,885 as “Canceled”.
+The dataset contains 36,275 bookings. Of the total bookings, 24,390 bookings were not canceled (67.2%), while 11,885 bookings were canceled (32.8%), reflecting a significant cancellation rate that offers rich insights into factors influencing booking decisions.
 
 ## **Key Statistical Findings**
 
@@ -65,12 +66,12 @@ This suggests that past cancellation history might not be a straightforward pred
 
 1. Average lead time for canceled bookings: 139.2 days\
 2. Average lead time for non-canceled bookings: 58.9 days\
-3. Longer lead times strongly correlated with higher cancellation probability\
+3. Longer lead times strongly correlated with higher cancellation probability.\
 
 **3.2 Room Price:**\
 
-1. Canceled bookings had a higher average room price\
-2. Price difference: Approximately 10.7 units higher for canceled bookings\
+1. Canceled bookings had a higher average room price.\
+2. Price difference: Approximately 10.7 units higher for canceled bookings.\
 
 **4. Seasonal Variations:**\
 The correlation between factors and cancellations varied across seasons:\
@@ -85,7 +86,7 @@ Special requests most negatively correlated with cancellations (-0.30).\
 Unique pattern with special requests having a strong negative correlation (-0.36).\
 
 **4.4 Winter:** \
-Slightly different dynamics with weaker correlations\
+Slightly different dynamics with weaker correlations.\
 
 ```{r correlation, fig.width=15, fig.height=10}
 hotel_data$booking_status_binary <- ifelse(hotel_data$booking_status == "Canceled", 1, 0)
