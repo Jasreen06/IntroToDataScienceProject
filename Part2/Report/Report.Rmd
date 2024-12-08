@@ -43,13 +43,90 @@ str(hotel_data)
 ```
 The dataset contains hotel bookings collected from 2017-2018 and is characterized by a total of 19 columns, comprising 5 categorical and 14 numerical variables.\
 
-```{r bar_plot1}
+## **Exploratory Data Analysis (EDA)**
+
+## **1. Summary Statistics **\
+```{r summary}
+summary(hotel_data)
+```
+
+**Summary:**\
+The average price per room in the dataset is 103 euros, with a median of 99 euros, but prices can reach up to 540 euros, indicating high-priced outliers. Some entries even show an average price of zero, possibly reflecting promotional deals. Guests typically stay for two weekday nights and one weekend night, with the average number of weekday nights being 2.2 and weekend nights 0.81. Stays can extend to as many as 17 weekday nights. Most bookings involve two adults, and many guests do not bring children. Lead times vary significantly, with an average of 85 days, a median of 57, and some bookings made up to 443 days in advance, suggesting a right-skewed distribution. The data also shows sparse previous cancellations, with an average of just 0.02, and a maximum of 58. Bookings are spread over 2017 and 2018, peaking in August. Additionally, most guests do not make special requests, as the median is zero, although some make up to five requests per booking.\
+
+## **2. Distribution of Booking Status**\
+```{r plot1}
 print(ggplot(hotel_data, aes(x = booking_status)) +
   geom_bar(fill = "lightblue") +
   labs(title = "Booking Status Distribution", x = "Booking Status", y = "Count"))
 ```
 
-The dataset contains 36,275 bookings. Of the total bookings, 24,390 bookings were not canceled (67.2%), while 11,885 bookings were canceled (32.8%), reflecting a significant cancellation rate that offers rich insights into factors influencing booking decisions.
+**Summary** \
+The dataset contains 36,275 bookings. Of the total bookings, 24,390 bookings were not canceled (67.2%), while 11,885 bookings were canceled (32.8%), reflecting a significant cancellation rate that offers rich insights into factors influencing booking decisions.\
+
+## **3. Barplot: Number of Special Requests** \
+```{r plot2}
+print(ggplot(hotel_data, aes(x = factor(no_of_special_requests))) +
+  geom_bar(fill = "lightblue") +
+  labs(title = "Number of Special Requests", x = "Number of Special Requests", y = "Count") +
+  theme_minimal())
+```
+
+**Summary** \
+Most guests make no special requests, with a sharp decline as the number increases. A significant portion makes one request, while two or more requests are increasingly rare.
+
+## **4. Plot: Market Segment vs Booking Status** \
+```{r plot3}
+contingency_table <- table(hotel_data$market_segment_type, hotel_data$booking_status)
+
+plot_data <- as.data.frame(contingency_table)
+colnames(plot_data) <- c("Market_Segment", "Booking_Status", "Count")
+
+print(ggplot(plot_data, aes(x = Market_Segment, y = Count, fill = Booking_Status)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Booking Status by Market Segment",
+       x = "Market Segment",
+       y = "Count",
+       fill = "Booking Status") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)))
+```
+
+**Summary** \
+Online market segment have the highest cancellation count, with a large proportion of canceled bookings of 8475.
+Offline segment has a cancellation count of 3253
+For other market segment, the cancellation rates are too less.
+
+## **5. Histogram: Lead_time** \
+```{r plot4}
+ggplot(hotel_data, aes(x = lead_time, fill = booking_status)) +
+  geom_histogram(binwidth = 10, position = "dodge") +
+  labs(
+    title = "Lead Time vs Booking Status",
+    x = "Lead Time (Days)",
+    y = "Number of Bookings",
+    fill = "Booking Status"
+  ) +
+  theme_minimal()
+```
+
+**Summary** \
+Here we can see that the booking with short lead times are less cancelled and as the lead time increases there are more booking cancellations. Also, we can see more cancellation happening between lead time form 100-200.
+
+## **6. Boxplot: avg_price_per_room** \
+```{r plot5}
+ggplot(hotel_data, aes(x = booking_status, y = avg_price_per_room, fill = booking_status)) +
+  geom_boxplot() +
+  labs(
+    title = "Average Room Price vs Booking Status",
+    x = "Booking Status",
+    y = "Average Room Price"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+**Summary** \
+The booking with cancelled status has higher median average room price value compared to non-cancelled booking status.This might mean that the booking with her average room price have more chances to get cancelled.
 
 ## **Key Statistical Findings**
 
@@ -121,10 +198,9 @@ Lead time strongly predicts cancellations, with longer lead times increasing lik
 hotel_data$type_of_meal_plan <- as.factor(hotel_data$type_of_meal_plan)
 hotel_data$room_type_reserved <- as.factor(hotel_data$room_type_reserved)
 hotel_data$market_segment_type <- as.factor(hotel_data$market_segment_type)
-#hotel_data$booking_status <- as.factor(hotel_data$booking_status)
+```
 
-
-# Train a Random Forest model
+```{r}
 rf_model1 <-randomForest(booking_status_binary ~ no_of_adults + no_of_children + no_of_weekend_nights + 
                           no_of_week_nights + type_of_meal_plan + required_car_parking_space + 
                           room_type_reserved + lead_time + arrival_year + arrival_month + 
@@ -133,31 +209,27 @@ rf_model1 <-randomForest(booking_status_binary ~ no_of_adults + no_of_children +
                         data = hotel_data, importance = TRUE, ntree = 100)
 
 print(rf_model1)
+```
 
-
-
-# Extract feature importance
+```{r}
 feature_importance <- importance(rf_model1)
-
 feature_importance
+```
 
-# Convert feature importance to a data frame for plotting
+```{r}
 importance_df <- data.frame(Feature = rownames(feature_importance), Importance = feature_importance[,1])
 
 importance_df <- importance_df[order(-importance_df$Importance),]
 importance_df
+```
 
-
-
-
-# Plot feature importance using ggplot2
+```{r}
 ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
   geom_bar(stat = "identity", fill = "steelblue") +
   coord_flip() +  # Flip the axes to make it easier to read
   labs(title = "Feature Importance from Random Forest Model",
        x = "Feature", y = "Importance") +
   theme_minimal()
-
 ```
 
 ## **2. Can we predict the likelihood of booking cancellation based on the lead time?**\
