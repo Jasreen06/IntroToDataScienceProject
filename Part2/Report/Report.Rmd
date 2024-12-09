@@ -27,7 +27,6 @@ library(glmnet)
 library(car)
 library(doParallel)
 
-
 #Setup knitter options
 knitr::opts_chunk$set(warning = F, message = F)
 options(scientific=T, digits = 3)
@@ -40,10 +39,11 @@ In our Part 1, we analyzed a hotel booking dataset from the INN Hotels Group to 
 
 ```{r import_dataset}
 hotel_data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
+hotel_datay <- read.csv("../../Dataset/INNHotelsGroup.csv")
 ``` 
 
 ```{r data_structure}
-str(hotel_data)
+str(hotel_datay)
 ```
 The dataset contains hotel bookings collected from 2017-2018 and is characterized by a total of 19 columns, comprising 5 categorical and 14 numerical variables.\
 
@@ -306,8 +306,6 @@ test_data <- prepared_data[-train_index, ]
 # Random Forest Model
 rf_model <- randomForest(
   high_demand ~ lead_time + 
-                no_of_adults + 
-                no_of_children + 
                 total_nights + 
                 booking_month + 
                 market_segment_type + 
