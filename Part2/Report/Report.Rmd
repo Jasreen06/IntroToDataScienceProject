@@ -22,9 +22,11 @@ library(pROC)
 library(corrplot)
 library(randomForest)
 library(rpart)
+library(rpart.plot)
 library(glmnet)
 library(car)
 library(doParallel)
+
 
 #Setup knitter options
 knitr::opts_chunk$set(warning = F, message = F)
@@ -33,6 +35,7 @@ options(scientific=T, digits = 3)
 
 # **Part 1 Recap**
 
+## **Introduction**
 In our Part 1, we analyzed a hotel booking dataset from the INN Hotels Group to understand the factors influencing booking cancellations.\
 
 ```{r import_dataset}
@@ -46,7 +49,7 @@ The dataset contains hotel bookings collected from 2017-2018 and is characterize
 
 ## **Exploratory Data Analysis (EDA)**
 
-## **1. Summary Statistics **\
+### **1. Summary Statistics **\
 ```{r summary}
 summary(hotel_data)
 ```
@@ -54,7 +57,7 @@ summary(hotel_data)
 **Summary:**\
 The average price per room in the dataset is 103 euros, with a median of 99 euros, but prices can reach up to 540 euros, indicating high-priced outliers. Some entries even show an average price of zero, possibly reflecting promotional deals. Guests typically stay for two weekday nights and one weekend night, with the average number of weekday nights being 2.2 and weekend nights 0.81. Stays can extend to as many as 17 weekday nights. Most bookings involve two adults, and many guests do not bring children. Lead times vary significantly, with an average of 85 days, a median of 57, and some bookings made up to 443 days in advance, suggesting a right-skewed distribution. The data also shows sparse previous cancellations, with an average of just 0.02, and a maximum of 58. Bookings are spread over 2017 and 2018, peaking in August. Additionally, most guests do not make special requests, as the median is zero, although some make up to five requests per booking.\
 
-## **2. Distribution of Booking Status**\
+### **2. Distribution of Booking Status**\
 ```{r plot1}
 print(ggplot(hotel_data, aes(x = booking_status)) +
   geom_bar(fill = "lightblue") +
@@ -64,7 +67,7 @@ print(ggplot(hotel_data, aes(x = booking_status)) +
 **Summary** \
 The dataset contains 36,275 bookings. Of the total bookings, 24,390 bookings were not canceled (67.2%), while 11,885 bookings were canceled (32.8%), reflecting a significant cancellation rate that offers rich insights into factors influencing booking decisions.\
 
-## **3. Barplot: Number of Special Requests** \
+### **3. Barplot: Number of Special Requests** \
 ```{r plot2}
 print(ggplot(hotel_data, aes(x = factor(no_of_special_requests))) +
   geom_bar(fill = "lightblue") +
@@ -75,7 +78,7 @@ print(ggplot(hotel_data, aes(x = factor(no_of_special_requests))) +
 **Summary** \
 Most guests make no special requests, with a sharp decline as the number increases. A significant portion makes one request, while two or more requests are increasingly rare.
 
-## **4. Plot: Market Segment vs Booking Status** \
+### **4. Plot: Market Segment vs Booking Status** \
 ```{r plot3}
 contingency_table <- table(hotel_data$market_segment_type, hotel_data$booking_status)
 
@@ -97,7 +100,7 @@ Online market segment have the highest cancellation count, with a large proporti
 Offline segment has a cancellation count of 3253
 For other market segment, the cancellation rates are too less.
 
-## **5. Histogram: Lead_time** \
+### **5. Histogram: Lead_time** \
 ```{r plot4}
 ggplot(hotel_data, aes(x = lead_time, fill = booking_status)) +
   geom_histogram(binwidth = 10, position = "dodge") +
@@ -113,7 +116,7 @@ ggplot(hotel_data, aes(x = lead_time, fill = booking_status)) +
 **Summary** \
 Here we can see that the booking with short lead times are less cancelled and as the lead time increases there are more booking cancellations. Also, we can see more cancellation happening between lead time form 100-200.
 
-## **6. Boxplot: avg_price_per_room** \
+### **6. Boxplot: avg_price_per_room** \
 ```{r plot5}
 ggplot(hotel_data, aes(x = booking_status, y = avg_price_per_room, fill = booking_status)) +
   geom_boxplot() +
@@ -193,61 +196,7 @@ Lead time strongly predicts cancellations, with longer lead times increasing lik
 
 # **SMART Questions:** \
 
-## **1. What key factors most strongly influence booking cancellations?**\
-
-```{r}
-hotel_data$type_of_meal_plan <- as.factor(hotel_data$type_of_meal_plan)
-hotel_data$room_type_reserved <- as.factor(hotel_data$room_type_reserved)
-hotel_data$market_segment_type <- as.factor(hotel_data$market_segment_type)
-hotel_data$arrival_month <- as.factor(hotel_data$arrival_month)
-```
-
-```{r}
-rf_model1 <-randomForest(booking_status_binary ~ no_of_adults + no_of_children + no_of_weekend_nights + 
-                          no_of_week_nights + type_of_meal_plan + required_car_parking_space + 
-                          room_type_reserved + lead_time + arrival_year + arrival_month + 
-                          market_segment_type + repeated_guest + 
-                          no_of_previous_cancellations + avg_price_per_room + no_of_special_requests,
-                        data = hotel_data, importance = TRUE, ntree = 100)
-
-feature_importance <- importance(rf_model1)
-
-importance_df <- data.frame(Feature = rownames(feature_importance), Importance = feature_importance[,1])
-
-importance_df <- importance_df[order(-importance_df$Importance),]
-importance_df
-```
-
-```{r}
-ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
-  coord_flip() +  # Flip the axes to make it easier to read
-  labs(title = "Feature Importance from Random Forest Model",
-       x = "Feature", y = "Importance") +
-  theme_minimal()
-```
-
-```{r}
-
-# Converting booking status to numeric
-hotel_data$booking_status_binary <- as.numeric(hotel_data$booking_status_binary)
-hotel_data$market_segment_type_num <- as.numeric(hotel_data$market_segment_type)
-hotel_data$arrival_month_num <- as.numeric(hotel_data$arrival_month)
-
-corr_data <- hotel_data[, c("booking_status_binary", "lead_time", "no_of_special_requests", 
-                            "avg_price_per_room", "market_segment_type_num", "no_of_week_nights", 
-                            "no_of_weekend_nights", "arrival_month_num")]
-
-#correlation matrix
-cor_matrix <- cor(corr_data)
-
-print(cor_matrix)
-
-# Plotting the correlation matrix using corrplot
-corrplot(cor_matrix, method = "circle", type = "lower", tl.col = "black", tl.srt = 45)
-
-```
-## **2. Can we predict the likelihood of booking cancellation based on the lead time?**\
+## **1. Can we predict the likelihood of booking cancellation based on the lead time?**\
 
 ```{r}
 set.seed(123)
@@ -290,6 +239,7 @@ cat("Precision:", round(precision, 4), "\n")
 cat("Recall:", round(recall, 4), "\n")
 cat("F1 Score:", round(f1_score, 4), "\n")
 ```
+
 **1. Accuracy:** 0.754, meaning the model correctly classifies 75.4% of the bookings.\
 **2. Precision:** 0.723, indicating that 72.3% of the predictions of canceled bookings are correct.\
 **3. Recall:** 0.415, meaning the model correctly identifies 41.5% of the actual canceled bookings.\
@@ -306,6 +256,7 @@ The plot indicates that as the specificity (the ability to correctly identify no
 auc_value <- auc(roc_curve)
 cat("Area Under the ROC Curve (AUC):", round(auc_value, 4), "\n")
 ```
+
 Area Under the ROC Curve (AUC): 0.75, suggesting the model has good discriminative power in predicting booking cancellations.\
 
 ```{r}
@@ -323,62 +274,7 @@ ggplot(hotel_data, aes(x = lead_time, y = booking_status_binary)) +
 
 The graph shows the relationship between the lead time (in days) and the probability of booking cancellation. As the lead time increases, the probability of booking cancellation rises in a non-linear fashion, with the curve becoming more steep at higher lead times.\
 
-## **3. What is the relationship between room price and the likelihood of a booking being canceled or not?**
-
-```{r}
-
-
-# Load necessary libraries
-library(tidyverse)
-
-# Load the dataset (assuming the file is saved as CSV)
-#data <- read.csv("../../Dataset/INNHotelsGroup_min.csv")
-
-# Clean the data: convert booking_status to a binary variable
-#data$booking_status <- ifelse(data$booking_status == "Canceled", 1, 0)
-
-
-# Fit a logistic regression model
-lrmodel1 <- glm(booking_status_binary ~ avg_price_per_room, data = hotel_data, family = binomial)
-
-# Summary of the model
-summary(lrmodel1)
-
-# Predict the probabilities
-hotel_data$predicted_prob <- predict(lrmodel1, type = "response")
-
-# Create a binary prediction based on a threshold of 0.5
-hotel_data$predicted_class <- ifelse(hotel_data$predicted_prob > 0.5, 1, 0)
-
-# Model evaluation
-conf_matrix <- table(hotel_data$booking_status_binary, hotel_data$predicted_class)
-accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
-print(paste("Accuracy:", round(accuracy, 2)))
-
-
-# You can also calculate AUC-ROC if needed:
-library(pROC)
-roc_curve <- roc(hotel_data$booking_status_binary, hotel_data$predicted_prob)
-plot(roc_curve)
-
-# Scatter plot to examine the relationship between price and cancellation
-plot(hotel_data$avg_price_per_room, hotel_data$booking_status_binary, 
-     main = "Scatter plot of Avg Price per Room vs Booking Status", 
-     xlab = "Average Price per Room", ylab = "Booking Status")
-
-# Boxplot for average price per room vs booking cancellation status
-boxplot(avg_price_per_room ~ booking_status_binary, data = hotel_data, 
-        main = "Boxplot of Avg Price per Room vs Booking Status", 
-        xlab = "Booking Status", ylab = "Average Price per Room")
-
-
-
-
-auc_value <- auc(roc_curve)
-print(paste("AUC:", round(auc_value, 2)))
-```
-
-## **5. Can we predict high-demand periods?**
+## **2. Can we predict high-demand periods?**
  
 ```{r}
 prepare_booking_data <- function(hotel_data) {
@@ -444,7 +340,6 @@ rf_results <- evaluate_model(test_data$high_demand, rf_class, "Random Forest")
 print(rf_results)
 ```
 
-
 ```{r}
 rf_importance <- data.frame(
   Feature = rownames(importance(rf_model)),
@@ -481,9 +376,214 @@ predict_high_demand_periods <- function(model, test_data) {
 high_demand_periods <- predict_high_demand_periods(rf_model, test_data)
 ```
 
-# **Building booking cancellation predictive model using the key factors**
+## **3. What is the relationship between room price and the likelihood of a booking being canceled or not?**
 
-## **Checking for multicollinearity**
+```{r}
+# Fit a logistic regression model
+lrmodel1 <- glm(booking_status_binary ~ avg_price_per_room, data = hotel_data, family = binomial)
+
+summary(lrmodel1)
+```
+
+```{r}
+hotel_data$predicted_prob <- predict(lrmodel1, type = "response")
+
+hotel_data$predicted_class <- ifelse(hotel_data$predicted_prob > 0.5, 1, 0)
+
+# Model evaluation
+conf_matrix <- table(hotel_data$booking_status_binary, hotel_data$predicted_class)
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+print(paste("Accuracy:", round(accuracy, 2)))
+```
+
+```{r}
+roc_curve <- roc(hotel_data$booking_status_binary, hotel_data$predicted_prob)
+plot(roc_curve)
+```
+
+```{r}
+auc_value <- auc(roc_curve)
+print(paste("AUC:", round(auc_value, 2)))
+```
+
+```{r}
+# Scatter plot to examine the relationship between price and cancellation
+plot(hotel_data$avg_price_per_room, hotel_data$booking_status_binary, 
+     main = "Scatter plot of Avg Price per Room vs Booking Status", 
+     xlab = "Average Price per Room", ylab = "Booking Status")
+```
+
+```{r}
+# Boxplot for average price per room vs booking cancellation status
+boxplot(avg_price_per_room ~ booking_status_binary, data = hotel_data, 
+        main = "Boxplot of Avg Price per Room vs Booking Status", 
+        xlab = "Booking Status", ylab = "Average Price per Room")
+```
+
+## **4. How do seasonal trends impact cancellation rates and booking patterns?**\
+
+### **Define seasons based on arrival month:**
+```{r}
+hotel_data$season <- case_when(
+  hotel_data$arrival_month %in% c(3, 4, 5) ~ "Spring",
+  hotel_data$arrival_month %in% c(6, 7, 8) ~ "Summer",
+  hotel_data$arrival_month %in% c(9, 10, 11) ~ "Fall",
+  hotel_data$arrival_month %in% c(12, 1, 2) ~ "Winter",
+  TRUE ~ "Unknown"
+)
+```
+
+### **Creating subsets for each season:**
+```{r subset_creation}
+# Create subsets for each season
+spring_data <- subset(hotel_data, season == "Spring")
+summer_data <- subset(hotel_data, season == "Summer")
+fall_data <- subset(hotel_data, season == "Fall")
+winter_data <- subset(hotel_data, season == "Winter")
+```
+
+### **Remove columns with zero variance:**
+```{r remove_column}
+# Function to remove columns with zero variance
+remove_zero_variance <- function(df) {
+  df[, sapply(df, function(col) sd(col, na.rm = TRUE) != 0)]
+}
+
+# Remove zero variance columns for each season
+spring_data_filtered <- remove_zero_variance(select_if(spring_data, is.numeric))
+summer_data_filtered <- remove_zero_variance(select_if(summer_data, is.numeric))
+fall_data_filtered <- remove_zero_variance(select_if(fall_data, is.numeric))
+winter_data_filtered <- remove_zero_variance(select_if(winter_data, is.numeric))
+```
+
+### **Calculate correlation matrices:**
+```{r seasonal_correlation, fig.width=15, fig.height=10}
+# Calculate and visualize correlation for Spring
+cor_spring <- cor(spring_data_filtered, use = "complete.obs")
+corrplot(cor_spring, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Spring", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
+
+# Calculate and visualize correlation for Summer
+cor_summer <- cor(summer_data_filtered, use = "complete.obs")
+corrplot(cor_summer, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Summer", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
+
+# Calculate and visualize correlation for Fall
+cor_fall <- cor(fall_data_filtered, use = "complete.obs")
+corrplot(cor_fall, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Fall", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
+
+# Calculate and visualize correlation for Winter
+cor_winter <- cor(winter_data_filtered, use = "complete.obs")
+corrplot(cor_winter, method = "color", addCoef.col = "black", 
+         title = "Correlation Matrix for Winter", number.cex = 1, 
+         tl.cex = 0.8, mar = c(1, 1, 2, 1))
+```
+
+### Logistic Regression: Impact of Seasonality on Booking Status
+
+```{r}
+### Logistic Regression: Impact of Seasonality on Booking Status
+# Fit logistic regression model
+logit_model <- glm(booking_status_binary ~ season, family = binomial, data = hotel_data)
+
+# Summarize the logistic regression model
+summary(logit_model)
+
+# Calculate odds ratios for the season coefficients
+odds_ratios <- exp(coef(logit_model))
+print(odds_ratios)
+
+# Predict probabilities using the logistic regression model
+hotel_data$predicted_probs <- predict(logit_model, type = "response")
+
+# Classify predictions using a 0.5 cutoff
+hotel_data$predicted_class <- ifelse(hotel_data$predicted_probs >= 0.5, 1, 0)
+
+# Confusion matrix
+confusion_matrix <- table(Predicted = hotel_data$predicted_class, Actual = hotel_data$booking_status_binary)
+print(confusion_matrix)
+
+# Calculate accuracy
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+cat("Accuracy:", accuracy, "\n")
+```
+
+```{r}
+# Fit a decision tree with adjusted parameters
+tree_model <- rpart(
+  booking_status_binary ~ season + lead_time + no_of_special_requests,
+  data = hotel_data,
+  method = "class",
+  control = rpart.control(cp = 0.001, minsplit = 10, maxdepth = 5)  # Lower cp and minsplit to allow more splits
+)
+
+# Plot the updated decision tree
+rpart.plot(tree_model, type = 3, extra = 102, fallen.leaves = TRUE, 
+           main = "Decision Tree: Seasonal Trends and Cancellations")
+```
+
+## **5. What key factors most strongly influence booking cancellations?**\
+
+```{r}
+hotel_data$type_of_meal_plan <- as.factor(hotel_data$type_of_meal_plan)
+hotel_data$room_type_reserved <- as.factor(hotel_data$room_type_reserved)
+hotel_data$market_segment_type <- as.factor(hotel_data$market_segment_type)
+hotel_data$arrival_month <- as.factor(hotel_data$arrival_month)
+```
+
+```{r}
+rf_model1 <-randomForest(booking_status_binary ~ no_of_adults + no_of_children + no_of_weekend_nights + 
+                          no_of_week_nights + type_of_meal_plan + required_car_parking_space + 
+                          room_type_reserved + lead_time + arrival_year + arrival_month + 
+                          market_segment_type + repeated_guest + 
+                          no_of_previous_cancellations + avg_price_per_room + no_of_special_requests,
+                        data = hotel_data, importance = TRUE, ntree = 100)
+
+feature_importance <- importance(rf_model1)
+
+importance_df <- data.frame(Feature = rownames(feature_importance), Importance = feature_importance[,1])
+
+importance_df <- importance_df[order(-importance_df$Importance),]
+importance_df
+```
+
+```{r}
+ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +  # Flip the axes to make it easier to read
+  labs(title = "Feature Importance from Random Forest Model",
+       x = "Feature", y = "Importance") +
+  theme_minimal()
+```
+
+```{r}
+
+# Converting booking status to numeric
+hotel_data$booking_status_binary <- as.numeric(hotel_data$booking_status_binary)
+hotel_data$market_segment_type_num <- as.numeric(hotel_data$market_segment_type)
+hotel_data$arrival_month_num <- as.numeric(hotel_data$arrival_month)
+
+corr_data <- hotel_data[, c("booking_status_binary", "lead_time", "no_of_special_requests", 
+                            "avg_price_per_room", "market_segment_type_num", "no_of_week_nights", 
+                            "no_of_weekend_nights", "arrival_month_num")]
+
+#correlation matrix
+cor_matrix <- cor(corr_data)
+
+print(cor_matrix)
+
+# Plotting the correlation matrix using corrplot
+corrplot(cor_matrix, method = "circle", type = "lower", tl.col = "black", tl.srt = 45)
+
+```
+
+## **Building booking cancellation predictive model using the key factors**
+
+### **Checking for multicollinearity**
 ```{r}
 
 # Assuming you've already fitted the logistic regression model
@@ -497,7 +597,8 @@ gvif_values <- vif(lm_model1)
 print(gvif_values)
 
 ```
-## **Building model using Random Forest**
+
+### **Building model using Random Forest**
 ```{r}
 
 hotel_data$booking_status_binary <- as.factor(hotel_data$booking_status_binary)
@@ -510,6 +611,7 @@ rf_model2 <- randomForest(booking_status_binary ~ lead_time + no_of_special_requ
 # Print the model summary to ensure it's treated as classification
 print(rf_model2)
 ```
+
 ```{r}
 pred_class_rf <- predict(rf_model2, newdata = hotel_data)
 
@@ -531,6 +633,7 @@ ggplot(conf_matrix_df, aes(x = Predicted, y = Actual, fill = Freq)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
 ```{r}
 # Extracting Precision, Recall, and Accuracy from the confusion matrix
 precision <- conf_matrix_rf$byClass['Pos Pred Value']
@@ -541,13 +644,13 @@ cat("Precision:", round(precision, 4), "\n")
 cat("Recall:", round(recall, 4), "\n")
 cat("Accuracy:", round(accuracy, 4), "\n")
 ```
+
 ```{r}
 # Predict class probabilities for the binary outcome (probabilities for each class, we need the second column for class 1)
 pred_probs_rf <- predict(rf_model2, newdata = hotel_data, type = "prob")[, 2]
 
 # Calculate ROC-AUC for Random Forest (use the second column for class 1 probabilities)
 roc_curve_rf <- roc(hotel_data$booking_status_binary, pred_probs_rf)
-
 
 # Plot the ROC curve
 plot(roc_curve_rf, main = "ROC Curve for Random Forest Model")
@@ -557,7 +660,7 @@ auc_value_rf <- auc(roc_curve_rf)
 cat("AUC:", round(auc_value_rf, 4), "\n")
 ```
 
-## **Validating the model by cross-validation with Random Forest using 5-fold cross-validation**
+### **Validating the model by cross-validation with Random Forest using 5-fold cross-validation**
 ```{r}
 
 # Set up parallel processing (use all but 1 core)
