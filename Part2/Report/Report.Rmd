@@ -32,9 +32,9 @@ knitr::opts_chunk$set(warning = F, message = F)
 options(scientific=T, digits = 3)
 ```
 
-# **Part 1 Recap**
+# **Introduction**
 
-## **Introduction**
+## **Part 1 Recap**
 In our Part 1, we analyzed a hotel booking dataset from the INN Hotels Group to understand the factors influencing booking cancellations.\
 
 ```{r import_dataset}
@@ -47,9 +47,9 @@ str(hotel_datay)
 ```
 The dataset contains hotel bookings collected from 2017-2018 and is characterized by a total of 19 columns, comprising 5 categorical and 14 numerical variables.\
 
-## **Exploratory Data Analysis (EDA)**
+### **Exploratory Data Analysis (EDA)**
 
-### **1. Summary Statistics **\
+#### **1. Summary Statistics **\
 ```{r summary}
 summary(hotel_data)
 ```
@@ -57,7 +57,7 @@ summary(hotel_data)
 **Summary:**\
 The average price per room in the dataset is 103 euros, with a median of 99 euros, but prices can reach up to 540 euros, indicating high-priced outliers. Some entries even show an average price of zero, possibly reflecting promotional deals. Guests typically stay for two weekday nights and one weekend night, with the average number of weekday nights being 2.2 and weekend nights 0.81. Stays can extend to as many as 17 weekday nights. Most bookings involve two adults, and many guests do not bring children. Lead times vary significantly, with an average of 85 days, a median of 57, and some bookings made up to 443 days in advance, suggesting a right-skewed distribution. The data also shows sparse previous cancellations, with an average of just 0.02, and a maximum of 58. Bookings are spread over 2017 and 2018, peaking in August. Additionally, most guests do not make special requests, as the median is zero, although some make up to five requests per booking.\
 
-### **2. Distribution of Booking Status**\
+#### **2. Distribution of Booking Status**\
 ```{r plot1}
 print(ggplot(hotel_data, aes(x = booking_status)) +
   geom_bar(fill = "lightblue") +
@@ -67,7 +67,7 @@ print(ggplot(hotel_data, aes(x = booking_status)) +
 **Summary** \
 The dataset contains 36,275 bookings. Of the total bookings, 24,390 bookings were not canceled (67.2%), while 11,885 bookings were canceled (32.8%), reflecting a significant cancellation rate that offers rich insights into factors influencing booking decisions.\
 
-### **3. Barplot: Number of Special Requests** \
+#### **3. Barplot: Number of Special Requests** \
 ```{r plot2}
 print(ggplot(hotel_data, aes(x = factor(no_of_special_requests))) +
   geom_bar(fill = "lightblue") +
@@ -78,7 +78,7 @@ print(ggplot(hotel_data, aes(x = factor(no_of_special_requests))) +
 **Summary** \
 Most guests make no special requests, with a sharp decline as the number increases. A significant portion makes one request, while two or more requests are increasingly rare.
 
-### **4. Plot: Market Segment vs Booking Status** \
+#### **4. Plot: Market Segment vs Booking Status** \
 ```{r plot3}
 contingency_table <- table(hotel_data$market_segment_type, hotel_data$booking_status)
 
@@ -100,7 +100,7 @@ Online market segment have the highest cancellation count, with a large proporti
 Offline segment has a cancellation count of 3253
 For other market segment, the cancellation rates are too less.
 
-### **5. Histogram: Lead_time** \
+#### **5. Histogram: Lead_time** \
 ```{r plot4}
 ggplot(hotel_data, aes(x = lead_time, fill = booking_status)) +
   geom_histogram(binwidth = 10, position = "dodge") +
@@ -116,7 +116,7 @@ ggplot(hotel_data, aes(x = lead_time, fill = booking_status)) +
 **Summary** \
 Here we can see that the booking with short lead times are less cancelled and as the lead time increases there are more booking cancellations. Also, we can see more cancellation happening between lead time form 100-200.
 
-### **6. Boxplot: avg_price_per_room** \
+#### **6. Boxplot: avg_price_per_room** \
 ```{r plot5}
 ggplot(hotel_data, aes(x = booking_status, y = avg_price_per_room, fill = booking_status)) +
   geom_boxplot() +
@@ -132,7 +132,7 @@ ggplot(hotel_data, aes(x = booking_status, y = avg_price_per_room, fill = bookin
 **Summary** \
 The booking with cancelled status has higher median average room price value compared to non-cancelled booking status.This might mean that the booking with her average room price have more chances to get cancelled.
 
-## **Key Statistical Findings**
+### **Key Statistical Findings**
 
 **1. Special Requests and Cancellations:** \
 Bookings with special requests had a significantly lower cancellation rate (20.2%) compared to those without (43.2%).\ 
@@ -187,12 +187,24 @@ corrplot(cor_data, method = "color", addCoef.col = "black",
 
 Lead time strongly predicts cancellations, with longer lead times increasing likelihood (0.44). More special requests (-0.25) and repeated guest status (-0.11) reduce cancellations, reflecting customer commitment and loyalty. Price per room has a weak positive correlation (0.14) with cancellations. Factors like travel party size and stay length show minimal impact on cancellation likelihood.\
 
-## **Preliminary Conclusions:**\
+### **Preliminary Conclusions:**\
 
 **1.** Lead time emerged as the most critical factor in predicting booking cancellations.\
 **2.** Special requests significantly reduce the likelihood of cancellations.\
 **3.** Booking behavior varies considerably across different seasons.\
 **4.** Higher-priced rooms show a slight tendency towards more cancellations.\
+
+## **Part 2 Agenda**
+
+In this phase, we aim to build a predictive model for hotel booking cancellations and explore key factors driving cancellation behavior. The analysis will address the following critical questions:
+
+Can we predict the likelihood of booking cancellation based on the lead time?\
+Can we predict peak booking times and high-demand periods?\
+What is the relationship between room price and the likelihood of a booking being canceled?\
+How do seasonal trends impact cancellation rates and booking patterns?\
+Which factors most strongly influence booking cancellation decisions?\
+
+To achieve these objectives, we will analyze customer attributes such as room price, lead time, and seasonal trends. Using logistic and Random forest models, we aim to predict the likelihood of booking cancellations and identify actionable insights. The results will help hotels effectively manage cancellation risks, optimize revenue strategies, and better anticipate high-demand periods.
 
 # **SMART Questions:** \
 

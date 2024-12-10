@@ -171,16 +171,6 @@ cat("Accuracy:", accuracy, "\n")
 
 
 
-
-
-
-
-
-
-```{r}
-
-```
-
 ```{r}
 # Fit a decision tree with adjusted parameters
 tree_model <- rpart(
