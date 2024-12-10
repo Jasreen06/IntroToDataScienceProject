@@ -368,7 +368,7 @@ ggplot(head(rf_importance, 10), aes(x = reorder(Feature, Importance), y = Import
   geom_bar(stat = "identity") +
   coord_flip() +
   labs(
-    title = "Top 10 Features Predicting High-Demand Periods",
+    title = "Top Features Predicting High-Demand Periods",
     x = "Features",
     y = "Importance"
   ) +
@@ -449,9 +449,12 @@ There are more outliers in higher room price ranges for canceled bookings, sugge
 The average price per room has a slight association with booking cancellations, particularly at higher price ranges. However, the difference in the overall distribution of prices between canceled and non-canceled bookings is minimal.
 
 ## **4. How do seasonal trends impact cancellation rates and booking patterns?**\
-### **This analysis focuses on understanding how seasonal trends impact hotel booking cancellations and patterns:**\
-### **Define seasons based on arrival month:**
-```{r}
+
+This analysis focuses on understanding how seasonal trends impact hotel booking cancellations and patterns:
+
+### **Calculate correlation matrices:**
+```{r seasonal_correlation, fig.width=15, fig.height=10}
+#Define seasons based on arrival month
 hotel_data$season <- case_when(
   hotel_data$arrival_month %in% c(3, 4, 5) ~ "Spring",
   hotel_data$arrival_month %in% c(6, 7, 8) ~ "Summer",
@@ -459,19 +462,12 @@ hotel_data$season <- case_when(
   hotel_data$arrival_month %in% c(12, 1, 2) ~ "Winter",
   TRUE ~ "Unknown"
 )
-```
 
-### **Creating subsets for each season:**
-```{r subset_creation}
 # Create subsets for each season
 spring_data <- subset(hotel_data, season == "Spring")
 summer_data <- subset(hotel_data, season == "Summer")
 fall_data <- subset(hotel_data, season == "Fall")
 winter_data <- subset(hotel_data, season == "Winter")
-```
-
-### **Remove columns with zero variance:**
-```{r remove_column}
 # Function to remove columns with zero variance
 remove_zero_variance <- function(df) {
   df[, sapply(df, function(col) sd(col, na.rm = TRUE) != 0)]
@@ -482,10 +478,7 @@ spring_data_filtered <- remove_zero_variance(select_if(spring_data, is.numeric))
 summer_data_filtered <- remove_zero_variance(select_if(summer_data, is.numeric))
 fall_data_filtered <- remove_zero_variance(select_if(fall_data, is.numeric))
 winter_data_filtered <- remove_zero_variance(select_if(winter_data, is.numeric))
-```
 
-### **Calculate correlation matrices:**
-```{r seasonal_correlation, fig.width=15, fig.height=10}
 # Calculate and visualize correlation for Spring
 cor_spring <- cor(spring_data_filtered, use = "complete.obs")
 corrplot(cor_spring, method = "color", addCoef.col = "black", 
@@ -510,33 +503,32 @@ corrplot(cor_winter, method = "color", addCoef.col = "black",
          title = "Correlation Matrix for Winter", number.cex = 1, 
          tl.cex = 0.8, mar = c(1, 1, 2, 1))
 ```
-**Fall Correlation Matrix:**\
-The strongest positive correlation with booking status (0.54) is lead time, suggesting that as the lead time increases, there is a higher chance of the booking being canceled. This makes sense, as bookings made far in advance may have a higher likelihood of being reconsidered or cancelled.\
-Number of special requests has a slight negative correlation with booking status (-0.23), indicating that bookings with more special requests tend to have a lower likelihood of cancellation.\
-
-**Summer Correlation Matrix:**\
-Lead time continues to show a strong positive correlation (0.43) with booking status, compared to other variables, meaning that longer lead times are associated with cancellations during the summer as well.\
-Number of special requests shows a moderate negative correlation (-0.30), reinforcing the idea that bookings with special requests are less likely to be cancelled.\
-Average price per room has a weak positive correlation (0.22), suggesting that higher-priced rooms might be slightly more likely to be cancelled in the summer.\
 
 **Spring Correlation Matrix:**\
 The positive correlation with lead time remains somewhat significant at 0.29, consistent with the previous seasons. Longer lead times are associated with a higher likelihood of cancellation.\
 Special requests have the strongest negative correlation (-0.36) in the spring, indicating that bookings with more special requests are much less likely to be canceled during this season.\
 Average price per room shows a small positive correlation (0.13) with booking status, indicating a slight tendency for higher-priced bookings to be cancelled.\
 
+**Summer Correlation Matrix:**\
+Lead time continues to show a strong positive correlation (0.43) with booking status, compared to other variables, meaning that longer lead times are associated with cancellations during the summer as well.\
+Number of special requests shows a moderate negative correlation (-0.30), reinforcing the idea that bookings with special requests are less likely to be cancelled.\
+Average price per room has a weak positive correlation (0.22), suggesting that higher-priced rooms might be slightly more likely to be cancelled in the summer.\
+
+**Fall Correlation Matrix:**\
+The strongest positive correlation with booking status (0.54) is lead time, suggesting that as the lead time increases, there is a higher chance of the booking being canceled. This makes sense, as bookings made far in advance may have a higher likelihood of being reconsidered or cancelled.\
+Number of special requests has a slight negative correlation with booking status (-0.23), indicating that bookings with more special requests tend to have a lower likelihood of cancellation.\
+
 **Winter Correlation Matrix:**\
 Lead time remains a positive trending factor, with a correlation of 0.24. Longer lead times during the winter continue to be associated with higher cancellation rates.\
 The number of special requests has a negative correlation (-0.14), suggesting that special requests still reduce the likelihood of cancellations in the winter, although the effect is less pronounced compared to other seasons.\
 Average price per room has a slightly stronger positive correlation (0.36), indicating that higher-priced rooms may have a higher chance of being cancelled during the winter season.\
-
 
 **To address the research question, logistic regression and a decision tree model were employed:**\
 Logistic Regression quantified the relationship between seasonality and cancellations, providing interpretable coefficients for inference.\
 Decision Tree modeling complemented logistic regression by exploring interactions between seasonality and other variables, offering intuitive decision rules.\
 
 
-
-### Logistic Regression: Impact of Seasonality on Booking Status
+### **Logistic Regression: Impact of Seasonality on Booking Status**
 
 ```{r}
 ### Logistic Regression: Impact of Seasonality on Booking Status
@@ -578,11 +570,14 @@ tree_model <- rpart(
 rpart.plot(tree_model, type = 3, extra = 102, fallen.leaves = TRUE, 
            main = "Decision Tree: Seasonal Trends and Cancellations")
 ```
-## **Model Results**
+
+Model Results
+
 The logistic regression analysis revealed that Summer bookings were 40.6% more likely to be canceled than Fall bookings, while Winter bookings were 65% less likely to be canceled.
 Spring bookings showed no significant difference from Fall (p=0.11). The model’s accuracy was 67.2%, demonstrating moderate predictive power. The decision tree highlighted lead time as the strongest predictor. Booking cancellations varied greatly regardless of lead times. For lead times over 152 days, cancellations varied significantly by season and the number of special requests. Bookings with fewer than three special requests had the highest cancellation rates, particularly in Fall (75.8%). In contrast, bookings with three or more special requests were highly reliable, with nearly zero cancellations. Winter bookings with long lead times showed a moderate cancellation rate (38.6%), reinforcing seasonal stability. 
 
-## **Conclusion**
+Conclusion
+
 Combining logistic regression and decision tree results provided a comprehensive view. Logistic regression quantified the seasonal effects, while the decision tree captured intricate interactions, such as the interplay of lead time and special requests with seasonality. These insights inform actionable strategies, such as focusing retention efforts on Fall bookings with long lead times and implementing stricter cancellation policies for Summer and Fall bookings with low special request counts. This analysis demonstrates the critical role of seasonality and booking attributes in shaping cancellation patterns. While the findings are robust, incorporating more factors such as customer demographics could improve predictive accuracy and address the current model limitations. These results offer valuable insights for optimizing revenue management in the hotel industry.
 
 
