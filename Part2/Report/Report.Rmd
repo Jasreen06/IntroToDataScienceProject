@@ -580,11 +580,10 @@ rpart.plot(tree_model, type = 3, extra = 102, fallen.leaves = TRUE,
 ```
 ## **Model Results**
 The logistic regression analysis revealed that Summer bookings were 40.6% more likely to be canceled than Fall bookings, while Winter bookings were 65% less likely to be canceled.
-Spring bookings showed no significant difference from Fall (p=0.11). The model’s accuracy was 67.2%, demonstrating moderate predictive power.
-
+Spring bookings showed no significant difference from Fall (p=0.11). The model’s accuracy was 67.2%, demonstrating moderate predictive power. The decision tree highlighted lead time as the strongest predictor. Booking cancellations varied greatly regardless of lead times. For lead times over 152 days, cancellations varied significantly by season and the number of special requests. Bookings with fewer than three special requests had the highest cancellation rates, particularly in Fall (75.8%). In contrast, bookings with three or more special requests were highly reliable, with nearly zero cancellations. Winter bookings with long lead times showed a moderate cancellation rate (38.6%), reinforcing seasonal stability. 
 
 ## **Conclusion**
-This analysis demonstrates the critical role of seasonality and booking attributes in shaping cancellation patterns. While the findings are robust, incorporating more factors such as customer demographics could improve predictive accuracy and address the current model limitations. These results offer valuable insights for optimizing revenue management in the hotel industry.
+Combining logistic regression and decision tree results provided a comprehensive view. Logistic regression quantified the seasonal effects, while the decision tree captured intricate interactions, such as the interplay of lead time and special requests with seasonality. These insights inform actionable strategies, such as focusing retention efforts on Fall bookings with long lead times and implementing stricter cancellation policies for Summer and Fall bookings with low special request counts. This analysis demonstrates the critical role of seasonality and booking attributes in shaping cancellation patterns. While the findings are robust, incorporating more factors such as customer demographics could improve predictive accuracy and address the current model limitations. These results offer valuable insights for optimizing revenue management in the hotel industry.
 
 
 
