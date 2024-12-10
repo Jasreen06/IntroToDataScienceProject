@@ -403,7 +403,10 @@ lrmodel1 <- glm(booking_status_binary ~ avg_price_per_room, data = hotel_data, f
 
 summary(lrmodel1)
 ```
+Here’s the interpretation of the logistic regression summary:
 
+The positive coefficient for avg_price_per_room (0.0087, p-value < 2e-16) indicates that as room price increases, the likelihood of a booking being canceled also slightly increases.
+While statistically significant, the effect size is modest, suggesting that room price alone has a small influence on cancellations.
 ```{r}
 hotel_data$predicted_prob <- predict(lrmodel1, type = "response")
 
@@ -425,19 +428,26 @@ auc_value <- auc(roc_curve)
 print(paste("AUC:", round(auc_value, 2)))
 ```
 
-```{r}
-# Scatter plot to examine the relationship between price and cancellation
-plot(hotel_data$avg_price_per_room, hotel_data$booking_status_binary, 
-     main = "Scatter plot of Avg Price per Room vs Booking Status", 
-     xlab = "Average Price per Room", ylab = "Booking Status")
-```
-
+The AUC score of 0.6 suggests that the model has limited ability to distinguish between canceled and non-canceled bookings based solely on room price.
 ```{r}
 # Boxplot for average price per room vs booking cancellation status
 boxplot(avg_price_per_room ~ booking_status_binary, data = hotel_data, 
         main = "Boxplot of Avg Price per Room vs Booking Status", 
         xlab = "Booking Status", ylab = "Average Price per Room")
 ```
+Key observations:
+
+Median Price:
+The median room price for both non-canceled and canceled bookings is quite similar, suggesting that the central tendency of room prices does not vary significantly with booking status.
+
+Distribution Spread:
+Both groups have a wide spread in room prices, but canceled bookings (status = 1) show slightly more variability in higher price ranges.
+The interquartile range (IQR) is comparable for both groups, indicating that most bookings (whether canceled or not) occur within a similar price range.
+
+Outliers:
+There are more outliers in higher room price ranges for canceled bookings, suggesting that cancellations are more frequent among high-price bookings.
+
+The average price per room has a slight association with booking cancellations, particularly at higher price ranges. However, the difference in the overall distribution of prices between canceled and non-canceled bookings is minimal.
 
 ## **4. How do seasonal trends impact cancellation rates and booking patterns?**\
 
@@ -579,6 +589,24 @@ ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
   theme_minimal()
 ```
 
+The feature importance analysis reveals key factors that influence hotel booking cancellations:
+
+Key Drivers:\
+Lead Time: The most important factor, with longer lead times increasing the likelihood of cancellations. This suggests that customers are more likely to cancel bookings made far in advance.\
+Number of Special Requests: Highly influential, indicating that customers with fewer special requests are more likely to cancel, potentially reflecting less commitment to their bookings.
+
+Moderately Influential Factors:\
+Seasonality and Pricing: Arrival month and average price per room are significant predictors, showing that cancellations are influenced by seasonal trends and pricing strategies.\
+Market Segment: The type of market segment (e.g., corporate, leisure) also has a considerable impact, reflecting differences in booking behavior across customer groups.
+
+Secondary Factors:\
+Stay Duration: The number of weekend and weekday nights has a moderate impact, suggesting that longer stays might be more stable.\
+Customer Demographics: Features like the number of adults and children in a booking contribute to predictions but are less critical.
+
+Least Important Factors:\
+Repeated Guest Status: Returning guests are less likely to cancel but have limited overall impact.\
+Previous Cancellations: Surprisingly, the number of past cancellations has minimal influence, suggesting that other factors play a more critical role in predicting cancellations.
+
 ```{r}
 
 # Converting booking status to numeric
@@ -593,12 +621,26 @@ corr_data <- hotel_data[, c("booking_status_binary", "lead_time", "no_of_special
 #correlation matrix
 cor_matrix <- cor(corr_data)
 
-print(cor_matrix)
 
 # Plotting the correlation matrix using corrplot
 corrplot(cor_matrix, method = "circle", type = "lower", tl.col = "black", tl.srt = 45)
 
 ```
+
+Strong Positive Correlation:\
+Lead Time and Booking Status: Lead time shows a strong positive correlation with booking cancellations, indicating that longer lead times are more likely to result in cancellations. This aligns with its high feature importance.
+
+Strong Negative Correlation:\
+Number of Special Requests and Booking Status: There is a strong negative correlation, suggesting that bookings with more special requests are less likely to be canceled, likely reflecting higher customer commitment.
+
+Moderate Correlations:\
+Market Segment and Booking Status: The market segment shows a moderate positive correlation with cancellations, highlighting the role of booking channels in cancellation behavior.\
+Average Price Per Room and Booking Status: There is a weaker but positive correlation, indicating that higher room prices are slightly more associated with cancellations.
+
+Weak or Negligible Correlations:\
+Features such as arrival month show weak correlations with booking status, suggesting a limited role of seasonality on its own.
+
+The correlation matrix confirms that lead time and the number of special requests are the strongest predictors of booking cancellations. Moderate relationships with market segment and room price also provide actionable insights. However, other features show weak correlations, implying their limited independent impact on cancellations. 
 
 ## **Building booking cancellation predictive model using the key factors**
 
@@ -617,7 +659,12 @@ print(gvif_values)
 
 ```
 
+The Variance Inflation Factor (VIF) analysis indicates that multicollinearity is not a concern in the model, as all predictors have GVIF values below the commonly accepted threshold of 5. This suggests that the predictors are not highly correlated with one another, ensuring the stability and reliability of the model's coefficient estimates. 
+
 ### **Building model using Random Forest**
+
+We selected Random forest classifier for its ability to handle non-linear relationships and capture feature interactions effectively. Its performance was evaluated using metrics like accuracy, sensitivity, specificity, and balanced accuracy.
+
 ```{r}
 
 hotel_data$booking_status_binary <- as.factor(hotel_data$booking_status_binary)
@@ -630,6 +677,11 @@ rf_model2 <- randomForest(booking_status_binary ~ lead_time + no_of_special_requ
 # Print the model summary to ensure it's treated as classification
 print(rf_model2)
 ```
+
+Model Summary\
+The random forest classification model demonstrated strong performance in predicting hotel booking cancellations. Using key predictors such as lead time, number of special requests, average room price, and market segment type, the model achieved an Out-of-Bag (OOB) error rate of 10.8%, indicating reliable generalization to unseen data. The confusion matrix highlights the model's ability to accurately predict non-cancellations (class 0) with a low class error rate of 6.24%, while cancellations (class 1) had a slightly higher error rate of 20.08%.
+
+These results underline the effectiveness of random forest in handling non-linear relationships and capturing feature interactions. The insights from the model—such as the importance of lead time and special requests—offer actionable recommendations for managing booking cancellations more effectively. Future work could address the higher misclassification rate for cancellations by exploring class imbalance solutions or incorporating additional features, such as customer demographics or cancellation policies. Overall, the model provides a robust foundation for data-driven decision-making in the hospitality industry.
 
 ```{r}
 pred_class_rf <- predict(rf_model2, newdata = hotel_data)
@@ -653,16 +705,20 @@ ggplot(conf_matrix_df, aes(x = Predicted, y = Actual, fill = Freq)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-```{r}
-# Extracting Precision, Recall, and Accuracy from the confusion matrix
-precision <- conf_matrix_rf$byClass['Pos Pred Value']
-recall <- conf_matrix_rf$byClass['Sensitivity']
-accuracy <- conf_matrix_rf$overall['Accuracy']
+The confusion matrix provides detailed insights into the performance of the random forest model for predicting hotel booking cancellations:
 
-cat("Precision:", round(precision, 4), "\n")
-cat("Recall:", round(recall, 4), "\n")
-cat("Accuracy:", round(accuracy, 4), "\n")
-```
+True Negatives (TN):\
+23,496 non-canceled bookings (class 0) were correctly predicted as non-canceled.
+
+False Positives (FP):\
+894 non-canceled bookings (class 0) were incorrectly predicted as canceled (class 1).
+
+False Negatives (FN):\
+1,592 canceled bookings (class 1) were incorrectly predicted as non-canceled (class 0).
+
+True Positives (TP):\
+10,293 canceled bookings (class 1) were correctly predicted as canceled
+
 
 ```{r}
 # Predict class probabilities for the binary outcome (probabilities for each class, we need the second column for class 1)
@@ -678,6 +734,27 @@ plot(roc_curve_rf, main = "ROC Curve for Random Forest Model")
 auc_value_rf <- auc(roc_curve_rf)
 cat("AUC:", round(auc_value_rf, 4), "\n")
 ```
+
+```{r}
+# Extracting Precision, Recall, and Accuracy from the confusion matrix
+precision <- conf_matrix_rf$byClass['Pos Pred Value']
+recall <- conf_matrix_rf$byClass['Sensitivity']
+accuracy <- conf_matrix_rf$overall['Accuracy']
+
+cat("Precision:", round(precision, 4), "\n")
+cat("Recall:", round(recall, 4), "\n")
+cat("Accuracy:", round(accuracy, 4), "\n")
+```
+
+The random forest model demonstrated excellent predictive performance for hotel booking cancellations. With an overall accuracy of 93.1% and a balanced accuracy of 91.5%, the model reliably differentiates between canceled and non-canceled bookings. The Kappa statistic of 0.842 further indicates strong agreement between predictions and actual outcomes, accounting for chance.
+
+Key performance metrics include:
+
+Sensitivity (Non-cancellations): 96.3%, showing the model's high ability to correctly identify non-canceled bookings.\
+Specificity (Cancellations): 86.6%, reflecting good performance in identifying cancellations.\
+Positive Predictive Value (Precision): 93.7%, indicating confidence in predicting non-cancellations.\
+Negative Predictive Value: 92%, showing reliability in predicting cancellations.\
+AUC: 0.986 means the model can correctly differentiate between canceled (class 1) and non-canceled (class 0) bookings in 98.6% of cases.
 
 ### **Validating the model by cross-validation with Random Forest using 5-fold cross-validation**
 ```{r}
@@ -705,6 +782,17 @@ print(cv_model)
 stopCluster(cl)
 
 ```
+
+Cross-validation was performed to ensure the reliability and robustness of the random forest model. It helps to evaluate the model’s performance across multiple subsets of the data, reducing the risk of overfitting and providing a more generalizable estimate of accuracy. Specifically, 5-fold cross-validation divides the dataset into five equally sized folds, training the model on four folds and testing it on the remaining fold, iteratively. This ensures that every data point is used for both training and testing, providing a reliable estimate of model performance.
+
+Cross-validation was conducted to validate the model’s predictive performance and reduce overfitting. The accuracy (86.8%) and Kappa (0.686) indicate that the random forest model is robust and provides reliable predictions for booking cancellations and non-cancellations. This approach ensures that the model will generalize well to unseen data.
+
+# **Conclusion**
+In this analysis, we successfully developed and evaluated a random forest model to predict hotel booking cancellations based on key features such as lead time, number of special requests, average room price, and market segment type. Through rigorous methods like 5-fold cross-validation, we demonstrated that the model achieves a high accuracy of 86.8%, with a Kappa value of 0.686, indicating substantial agreement between predictions and actual outcomes. The model's robustness was further validated through performance metrics, including an out-of-bag (OOB) error rate of 10.9%.
+
+Key findings highlight that lead time and the number of special requests are the most influential predictors, providing actionable insights for hotels to optimize revenue management strategies. While the model performs well overall, higher misclassification rates for canceled bookings suggest opportunities for improvement by incorporating additional predictors or addressing class imbalance.
+
+This analysis emphasizes the importance of data-driven decision-making in the hospitality industry, offering valuable tools to anticipate cancellations and enhance operational efficiency. Future work could focus on integrating additional features, such as customer demographics or external factors (e.g., economic trends), to further improve prediction accuracy and model interpretability.
 
 # **References**
 1. Antonio, N., de Almeida, A., & Nunes, L. (2017). Predicting hotel bookings cancellation with a machine learning          classification model. In 2017 IEEE International Conference on Data Mining Workshops (ICDMW) (pp. 1100–1107). IEEE. https://ieeexplore.ieee.org/document/8260781
