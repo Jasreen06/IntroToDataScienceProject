@@ -1,5 +1,5 @@
 ---
-title: 'DATS6101 Project 2: Exploring Hotel Booking Cancellations'
+title: 'DATS6101 Project 2: Hotel Booking Cancellation and Predictive Analysis'
 author: "Group 6 : Jasreen Kaur Mehta, Pranav Dhawan, Tycho Gormley"
 date: '`r Sys.Date()`'
 output:
@@ -398,7 +398,6 @@ This function use the random forest model to predict probabilities for high-dema
 ## **3. What is the relationship between room price and the likelihood of a booking being canceled or not?**
 
 ```{r}
-# Fit a logistic regression model
 lrmodel1 <- glm(booking_status_binary ~ avg_price_per_room, data = hotel_data, family = binomial)
 
 summary(lrmodel1)
@@ -647,11 +646,10 @@ The correlation matrix confirms that lead time and the number of special request
 ### **Checking for multicollinearity**
 ```{r}
 
-# Assuming you've already fitted the logistic regression model
+
 lm_model1 <- lm(booking_status_binary ~ lead_time + no_of_special_requests + avg_price_per_room + 
                  market_segment_type + no_of_week_nights + no_of_weekend_nights + arrival_month,
                  data = hotel_data)
-#summary(lm_model1)
 
 gvif_values <- vif(lm_model1)
 
@@ -669,12 +667,11 @@ We selected Random forest classifier for its ability to handle non-linear relati
 
 hotel_data$booking_status_binary <- as.factor(hotel_data$booking_status_binary)
 
-# Fit Random Forest model for classification (binary target)
+
 rf_model2 <- randomForest(booking_status_binary ~ lead_time + no_of_special_requests + avg_price_per_room + 
                           market_segment_type + no_of_week_nights + no_of_weekend_nights + arrival_month, 
                           data = hotel_data, ntree = 100)
 
-# Print the model summary to ensure it's treated as classification
 print(rf_model2)
 ```
 
@@ -686,10 +683,9 @@ These results underline the effectiveness of random forest in handling non-linea
 ```{r}
 pred_class_rf <- predict(rf_model2, newdata = hotel_data)
 
-# Confusion Matrix (Make sure both predicted and actual values have the same levels)
+# Confusion Matrix 
 conf_matrix_rf <- confusionMatrix(pred_class_rf, hotel_data$booking_status_binary)
 conf_matrix_rf
-# Print confusion matrix and the calculated metrics
 
 conf_matrix_df <- as.data.frame(as.table(conf_matrix_rf))
 conf_matrix_df
@@ -721,10 +717,8 @@ True Positives (TP):\
 
 
 ```{r}
-# Predict class probabilities for the binary outcome (probabilities for each class, we need the second column for class 1)
 pred_probs_rf <- predict(rf_model2, newdata = hotel_data, type = "prob")[, 2]
 
-# Calculate ROC-AUC for Random Forest (use the second column for class 1 probabilities)
 roc_curve_rf <- roc(hotel_data$booking_status_binary, pred_probs_rf)
 
 # Plot the ROC curve
@@ -759,26 +753,23 @@ AUC: 0.986 means the model can correctly differentiate between canceled (class 1
 ### **Validating the model by cross-validation with Random Forest using 5-fold cross-validation**
 ```{r}
 
-# Set up parallel processing (use all but 1 core)
 cl <- makeCluster(detectCores() - 1)
 registerDoParallel(cl)
 
-# Reduce number of trees for faster cross-validation
 ntree_val <- 50
 
-# Perform cross-validation with Random Forest using 5-fold cross-validation
+# cross-validation with Random Forest using 5-fold cross-validation
 cv_model <- train(booking_status_binary ~ lead_time + no_of_special_requests + avg_price_per_room + 
                   market_segment_type + no_of_week_nights + no_of_weekend_nights + arrival_month, 
                   data = hotel_data,
                   method = "rf",
-                  trControl = trainControl(method = "cv", number = 5),  # 5-fold cross-validation
-                  tuneGrid = data.frame(mtry = 3),  # You can adjust mtry for tuning
-                  ntree = ntree_val)  # Set ntree to a smaller value for faster computation
+                  trControl = trainControl(method = "cv", number = 5),
+                  tuneGrid = data.frame(mtry = 3),
+                  ntree = ntree_val)
 
-# Print the results of cross-validation
+
 print(cv_model)
 
-# Stop the parallel cluster
 stopCluster(cl)
 
 ```
